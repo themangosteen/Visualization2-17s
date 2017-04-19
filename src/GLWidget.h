@@ -118,8 +118,8 @@ private:
 	QElapsedTimer animationTimer;
 
 	// vars to measure fps
-	size_t frameCount;
-	size_t fps;
+	size_t frameCount = 0;
+	size_t fps = 0;
 	qint64 previousTimeFPS;
 	QElapsedTimer fpsTimer;
 

@@ -133,12 +133,15 @@ void GLWidget::initializeGL()
 	// GL_NVX_gpu_memory_info is an extension by NVIDIA
 	// that provides applications visibility into GPU
 	// hardware memory utilization
-	const char *extensions = (const char*)glGetString(GL_EXTENSIONS);
-	const char *vendor = (const char*)glGetString(GL_VENDOR);
-	if (!strcmp(vendor, "Nvidia") && !strcmp(extensions, "GL_NVX_gpu_memory_info"))
+	QString extensions = QString((const char*)glGetString(GL_EXTENSIONS));
+	QString vendor = QString((const char*)glGetString(GL_VENDOR));
+	QString renderer = QString((const char*)glGetString(GL_RENDERER));
+	qDebug() << "Graphics Device:" << renderer << "by" << vendor;
+	if (vendor.contains("nvidia", Qt::CaseInsensitive) && extensions.contains("GL_NVX_gpu_memory_info", Qt::CaseInsensitive))
 		GL_NVX_gpu_memory_info_supported = true;
-	else
+	else {
 		qDebug() << "OpenGL extension GL_NVX_gpu_memory_info not supported (requires NVIDIA gpu)";
+	}
 	GLint total_mem_kb = 0;
 	GLint cur_avail_mem_kb = 0;
 	if (GL_NVX_gpu_memory_info_supported) {
@@ -148,8 +151,8 @@ void GLWidget::initializeGL()
 
 	float cur_avail_mem_mb = float(cur_avail_mem_kb) / 1024.0f;
 	float total_mem_mb = float(total_mem_kb) / 1024.0f;
-	mainWindow->displayTotalGPUMemory(total_mem_mb);
-	mainWindow->displayUsedGPUMemory(0);
+	//mainWindow->displayTotalGPUMemory(total_mem_mb);
+	//mainWindow->displayUsedGPUMemory(0);
 
 	// start scene update and paint timer
 	connect(&paintTimer, SIGNAL(timeout()), this, SLOT(update()));
@@ -361,7 +364,7 @@ void GLWidget::calculateFPS()
 		frameCount = 0;
 	}
 
-	mainWindow->displayFPS(fps);
+	//mainWindow->displayFPS(fps);
 
 }
 
