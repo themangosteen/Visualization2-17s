@@ -79,6 +79,7 @@ private:
 	GLWidget *glWidget;
 	std::vector<std::vector<glm::vec3> > datasetLines;
 
+    void loadStandardData();
 };
 
 #endif

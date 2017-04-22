@@ -1,6 +1,7 @@
 #include <QFileDialog>
 #include <qmessagebox.h>
 #include <QPainter>
+#include <iostream>
 
 #include "MainWindow.h"
 
@@ -23,6 +24,7 @@ MainWindow::MainWindow(QWidget *parent)
 	
 
 	connect(ui->actionOpen, SIGNAL(triggered()), this, SLOT(openFileAction()));
+	connect(ui->StandardLoadingButton, SIGNAL(clicked()), this, SLOT(loadStandardData()));
 	connect(ui->actionClose, SIGNAL(triggered()), this, SLOT(closeAction()));
 
 	connect(ui->frame_slider, SIGNAL(valueChanged(int)), this, SLOT(frameChanged(int)));
@@ -56,10 +58,19 @@ MainWindow::~MainWindow()
 //-------------------------------------------------------------------------------------------------
 // Slots
 //-------------------------------------------------------------------------------------------------
+void MainWindow::loadStandardData()
+{
+//	std::cout << "Loading standard data..." << std::endl;
+    qDebug() <<"Loading standard data..."; //<-- is not printed to the console, maybe this method is not even executed
+    // TODO load data
+
+}
+
 
 void MainWindow::openFileAction()
 {
-	QString filename = QFileDialog::getOpenFileName(this, "Data File", 0, tr("Data Files (*.nc)"));
+	std::cout << "Opened the Open File dialogue..."<<std::endl;
+	QString filename = QFileDialog::getOpenFileName(this, "Select your cool Spaghetti File!", 0, tr("Data Files (*.nc)"));
 
 	if (!filename.isEmpty())
 	{
@@ -81,6 +92,12 @@ void MainWindow::openFileAction()
 			ui->frame_slider->setValue(0);
 			glWidget->initLineRenderMode(&datasetLines);
 		}
+        else if (fn.substr(fn.find_last_of(".") + 1) == "sop") // LOAD SOP DATA
+        {
+            success = false; //NetCDFLoader::readData(filename, m_animation, &nrFrames, m_Ui->progressBar);
+            ui->labelTop->setText("Loading SOP data is unfortunately not supported as we were not able to find any data about it :/ ");
+        }
+
 
 		ui->progressBar->setEnabled(false);
 

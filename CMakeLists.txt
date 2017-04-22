@@ -46,7 +46,7 @@ set(SRC_CLASSES
     src/bstrlib.h
     src/glsw.c
     src/glsw.h
-)
+        )
 	
 # relative path to shader files
 set(SRC_SHADERS
