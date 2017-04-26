@@ -69,7 +69,7 @@ private:
 
 	void initShaders();
 
-	void allocateGPUBuffer();
+	void allocateGPUBufferLineData();
 	void drawLines();
 
 	void calculateFPS();
@@ -78,11 +78,12 @@ private:
 
 	// CPU line geometry data
 	size_t nrLines;
-	std::vector<std::vector<glm::vec3> > *lines; // vector of lines (vector of vector of points)
+	std::vector<std::vector<glm::vec3> > *lines; // vector of lines (vector of vector of 3D points)
 
 	// GPU line geometry data and shaders
 	QOpenGLShaderProgram *simpleLineShader;
 	QOpenGLVertexArrayObject vaoLines; // a VAO remembers states of buffer objects, allowing to easily bind/unbind different buffer states for rendering different objects in a scene.
+	QOpenGLBuffer vboLines; // actual line data (array of 3D points)
 
 	// GUI ELEMENTS
 

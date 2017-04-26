@@ -32,9 +32,10 @@ GLWidget::~GLWidget()
 
 void GLWidget::initShaders()
 {
+	QString buildDir = QCoreApplication::applicationDirPath();
 	simpleLineShader = new QOpenGLShaderProgram(QOpenGLContext::currentContext());
-	simpleLineShader->addShaderFromSourceFile(QOpenGLShader::Vertex, "/shaders/simple_line_shader.vert");
-	simpleLineShader->addShaderFromSourceFile(QOpenGLShader::Fragment, "/shaders/simple_line_shader.frag");
+	simpleLineShader->addShaderFromSourceFile(QOpenGLShader::Vertex, buildDir + "/shaders/simple_line_shader.vert");
+	simpleLineShader->addShaderFromSourceFile(QOpenGLShader::Fragment, buildDir + "/shaders/simple_line_shader.frag");
 	simpleLineShader->link();
 
 }
@@ -57,7 +58,7 @@ void GLWidget::initializeGL()
 	QWidget::setFocusPolicy(Qt::FocusPolicy::ClickFocus);
 
 	initializeOpenGLFunctions();
-	glClearColor(0.862f, 0.929f, 0.949f, 1.0f);
+	glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_MULTISAMPLE);
 
@@ -114,18 +115,12 @@ void GLWidget::initLineRenderMode(std::vector<std::vector<glm::vec3> > *lines)
 	this->lines = lines;
 	renderMode = RenderMode::LINES;
 
-	simpleLineShader->bind();
+	// allocate data
+	allocateGPUBufferLineData();
 
-	QOpenGLVertexArrayObject::Binder vaoBinder(&vaoLines);
-	QOpenGLFunctions *f = QOpenGLContext::currentContext()->functions();
-
-	// TODO: bind positions etc.
-
-	simpleLineShader->release();
-	allocateGPUBuffer();
 }
 
-void GLWidget::allocateGPUBuffer()
+void GLWidget::allocateGPUBufferLineData()
 {
 	// makes the widget's rendering context the current OpenGL rendering context
 	makeCurrent();
@@ -133,46 +128,34 @@ void GLWidget::allocateGPUBuffer()
 	// load lines
 	nrLines = lines->size();
 
+	// TODO create struct of line vertices
+	// each vertex should contain: glm::vec3 position, glm::vec2 texturecoords, glm::vec3 line direction
+
 	for (size_t i = 0; i < nrLines; ++i) {
 		std::vector<glm::vec3> line = (*lines)[i];
 	}
 
+	std::vector<glm::vec3> line1 = (*lines)[0];
+	qDebug() << "line number of vertices:" << line1.size();
+
 	QOpenGLVertexArrayObject::Binder vaoBinder(&vaoLines); // destructor unbinds (i.e. when out of scope)
 	QOpenGLFunctions *f = QOpenGLContext::currentContext()->functions();
 
-	/* TODO
-	// allocate data to buffers (positions, radii, colors) and bind buffers to shaders
+	// allocate line vertex data to vertex buffer object
+	vboLines.create();
+	vboLines.bind();
+	vboLines.setUsagePattern(QOpenGLBuffer::StaticDraw);
+	vboLines.allocate(&line1[0], line1.size() * sizeof(glm::vec3)); // just first line for now
 
-	m_vbo_pos.create();
-	m_vbo_pos.bind();
-	m_vbo_pos.setUsagePattern(QOpenGLBuffer::StaticDraw); // maybe just create once and use StreamDraw
-	m_vbo_pos.allocate(&m_pos[0], m_pos.size() * sizeof(glm::vec3));
-	int atomPosAttribIndex = shaderprogram_lines->attributeLocation("atomPos");
-	shaderprogram_lines->enableAttributeArray(atomPosAttribIndex); // enable bound vertex buffer at this index
-	shaderprogram_lines->setAttributeBuffer(atomPosAttribIndex, GL_FLOAT, 0, 3); // 3 components x,y,z
-
-	m_vbo_radii.create();
-	m_vbo_radii.bind();
-	m_vbo_radii.setUsagePattern(QOpenGLBuffer::StaticDraw); // maybe just create once and use StreamDraw
-	m_vbo_radii.allocate(&m_radii[0], m_radii.size() * sizeof(float));
-	int atomRadiusAttribIndex = shaderprogram_lines->attributeLocation("atomRadius");
-	shaderprogram_lines->enableAttributeArray(atomRadiusAttribIndex); // enable bound vertex buffer at this index
-	shaderprogram_lines->setAttributeBuffer(atomRadiusAttribIndex, GL_FLOAT, 0, 1); // 1 component
-
-	m_vbo_colors.create();
-	m_vbo_colors.bind();
-	m_vbo_colors.setUsagePattern(QOpenGLBuffer::StaticDraw); // maybe just create once and use StreamDraw
-	m_vbo_colors.allocate(&m_colors[0], m_colors.size() * sizeof(glm::vec3));
-	int atomColorAttribIndex = shaderprogram_lines->attributeLocation("atomColor");
-	shaderprogram_lines->enableAttributeArray(atomColorAttribIndex); // enable bound vertex buffer at this index
-	shaderprogram_lines->setAttributeBuffer(atomColorAttribIndex, GL_FLOAT, 0, 3); // 3 components x,y,z
+	// bind vbo to shader attribute
+	simpleLineShader->bind();
+	int positionAttribShaderIndex = simpleLineShader->attributeLocation("position");
+	simpleLineShader->enableAttributeArray(positionAttribShaderIndex); // enable bound vertex buffer at this index
+	simpleLineShader->setAttributeBuffer(positionAttribShaderIndex, GL_FLOAT, 0, 3); // 3 components x,y,z
 
 	// unbind buffers and shader program
-	m_vbo_pos.release();
-	m_vbo_radii.release();
-	m_vbo_colors.release();
-	shaderprogram_lines->release();
-	*/
+	vboLines.release();
+	simpleLineShader->release();
 
 	// display memory usage
 	if (GL_NVX_gpu_memory_info_supported) {
@@ -206,15 +189,14 @@ void GLWidget::drawLines()
 {
 	QOpenGLFunctions *glf = QOpenGLContext::currentContext()->functions();
 
-	/* BIND BUFFERS AND INIT SHADER UNIFORMS */
+	// BIND BUFFERS AND INIT SHADER UNIFORMS
 
 	// bind vertex array object to bind all vbos associated with it
 	QOpenGLVertexArrayObject::Binder vaoBinder(&vaoLines); // destructor unbinds (i.e. when out of scope)
-	// bind shader program
-	simpleLineShader->bind();
 
-	// set shader uniforms
+	// bind shader program and set shader uniforms
 	// note that glm uses column vectors, qt uses row vectors, thus transpose
+	simpleLineShader->bind();
 	QMatrix4x4 viewMat = QMatrix4x4(glm::value_ptr(camera.getViewMatrix())).transposed();
 	QMatrix4x4 projMat = QMatrix4x4(glm::value_ptr(camera.getProjectionMatrix())).transposed();
 	//QVector3D cameraPos = QVector3D(viewMat * QVector4D(m_camera.getPosition().x, m_camera.getPosition().y, m_camera.getPosition().z, 1));
@@ -223,16 +205,15 @@ void GLWidget::drawLines()
 	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("projMat"), projMat);
 	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("lightPos"), lightPos); // in view space
 	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("lineHaloWidth"), lineHaloWidth);
+	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("color"), 0.9f, 0.3f, 0.8f);
 
-	/* DRAW */
+	// DRAW
 
 	glf->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	//glf->glEnable(GL_BLEND); glf->glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	size_t nrLines = 0;
-	glf->glDrawArrays(GL_POINTS, 0, nrLines);
+	glf->glDrawArrays(GL_LINE_STRIP, 0, (*lines)[0].size()); // TODO change to triangle strip
 
-	// unbind shader program
 	simpleLineShader->release();
 
 }
@@ -281,11 +262,7 @@ void GLWidget::mouseMoveEvent(QMouseEvent *event)
 	int dy = event->y() - lastMousePos.y();
 
 	// rotate camera
-	if (event->buttons() & Qt::LeftButton) {
-		camera.rotateAzimuth(dx / 100.0f);
-		camera.rotatePolar(dy / 100.0f);
-	}
-	if (event->buttons() & Qt::RightButton) {
+	if (event->buttons() & Qt::LeftButton || event->buttons() & Qt::RightButton) {
 		camera.rotateAzimuth(dx / 100.0f);
 		camera.rotatePolar(dy / 100.0f);
 	}

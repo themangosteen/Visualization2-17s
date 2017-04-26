@@ -45,10 +45,12 @@ void MainWindow::generateTestData()
 {
 
     std::vector<glm::vec3> line1;
-    line1.push_back(glm::vec3(0  , 0  , 0));
-    line1.push_back(glm::vec3(0.5, 0  , 0));
-    line1.push_back(glm::vec3(0.5, 0.2, 0));
-    line1.push_back(glm::vec3(1  , 1  , 0));
+	line1.push_back(glm::vec3(0  , 0, -10));
+	line1.push_back(glm::vec3(10 , 0, -10));
+	line1.push_back(glm::vec3(5  , 6, -10));
+	line1.push_back(glm::vec3(3  , 0,   3));
+	line1.push_back(glm::vec3(-10, 4,   3));
+	line1.push_back(glm::vec3( -5, 3,   3));
     datasetLines.push_back(line1);
 
     qDebug() << "Test line data generated.";
@@ -59,9 +61,7 @@ void MainWindow::generateTestData()
 
 void MainWindow::openFileAction()
 {
-	QString filename = QFileDialog::getOpenFileName(this, "Select your cool Spaghetti File!", 0, tr("Data Files (*.nc)"));
-
-    glWidget->initLineRenderMode(&datasetLines);
+	QString filename = QFileDialog::getOpenFileName(this, "Open dataset file...", 0, tr("Data Files (*.sop)"));
 
 	if (!filename.isEmpty()) {
         // store filename
@@ -73,11 +73,15 @@ void MainWindow::openFileAction()
         ui->progressBar->setEnabled(true);
         ui->labelTop->setText("Loading data ...");
 
-		if (fn.substr(fn.find_last_of(".") + 1) == "sop") { // LOAD SOP DATA
-            success = false; //NetCDFLoader::readData(filename, m_animation, &nrFrames, m_Ui->progressBar);
-            ui->labelTop->setText("Loading SOP data is unfortunately not supported as we were not able to find any data about it :/ ");
-			glWidget->initLineRenderMode(&datasetLines);
+		std::string filenameExtension = fn.substr(fn.find_last_of(".") + 1);
+		if (filenameExtension == "sop") { // LOAD SOP DATA
+			success = false;
+			ui->labelTop->setText("Yes we would love to load SOP data too.");
         }
+		else {
+			success = false;
+			ui->labelTop->setText("Error loading file " + filename + ": Unknown filename extension.");
+		}
 
         ui->progressBar->setEnabled(false);
 
@@ -86,12 +90,14 @@ void MainWindow::openFileAction()
             QString type;
 			if (fileType.type == SOP) type = "SOP";
             ui->labelTop->setText("File LOADED [" + filename + "] - Type [" + type + "]");
+
+			glWidget->initLineRenderMode(&datasetLines);
         }
 		else {
             ui->labelTop->setText("ERROR loading file " + filename + "!");
             ui->progressBar->setValue(0);
         }
-    }
+	}
 }
 
 void MainWindow::renderModeChanged(int index)
