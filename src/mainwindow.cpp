@@ -1,10 +1,14 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+#include <iostream>
+#include <stdlib.h>
+#include <time.h>
+
 #include <QFileDialog>
 #include <qmessagebox.h>
 #include <QPainter>
-#include <iostream>
+
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -41,22 +45,25 @@ MainWindow::~MainWindow()
 	delete ui;
 }
 
-void MainWindow::generateTestData()
+void MainWindow::generateTestData(int numVertices, glm::vec3 boundingBoxMin, glm::vec3 boundingBoxMax)
 {
+	datasetLines.clear();
 
     std::vector<glm::vec3> line1;
-	line1.push_back(glm::vec3(0  , 0, -10));
-	line1.push_back(glm::vec3(10 , 0, -10));
-	line1.push_back(glm::vec3(5  , 6, -10));
-	line1.push_back(glm::vec3(3  , 0,   3));
-	line1.push_back(glm::vec3(-10, 4,   3));
-	line1.push_back(glm::vec3( -5, 3,   3));
-    datasetLines.push_back(line1);
+	srand(time(NULL)); // change pseudorandom number generator seed
 
-    qDebug() << "Test line data generated.";
+	// generate random line vertices within given bounding box
+	for (int i = 0; i < numVertices; ++i) {
+		float rx = ((boundingBoxMax.x - boundingBoxMin.x) * ((float)rand()/RAND_MAX)) + boundingBoxMin.x;
+		float ry = ((boundingBoxMax.y - boundingBoxMin.y) * ((float)rand()/RAND_MAX)) + boundingBoxMin.y;
+		float rz = ((boundingBoxMax.z - boundingBoxMin.z) * ((float)rand()/RAND_MAX)) + boundingBoxMin.z;
+		line1.push_back(glm::vec3(rx, ry, rz));
+	}
+
+    datasetLines.push_back(line1);
+	qDebug() << "Test line data generated:" << numVertices << "vertices";
 
 	glWidget->initLineRenderMode(&datasetLines);
-
 }
 
 void MainWindow::openFileAction()
@@ -157,5 +164,5 @@ void MainWindow::displayFPS(int fps)
 
 void MainWindow::on_generateTestDataButton_clicked()
 {
-	generateTestData();
+	generateTestData(50, glm::vec3(-1.f,-1.f,-1.f), glm::vec3(1.f,1.f,1.f));
 }

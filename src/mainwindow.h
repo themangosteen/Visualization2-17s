@@ -45,7 +45,7 @@ protected slots:
     void renderModeChanged(int index);
     void contourWidthChanged(double value);
 
-    void generateTestData();
+	void generateTestData(int numVertices, glm::vec3 boundingBoxMin, glm::vec3 boundingBoxMax);
 
 private slots:
 	void on_generateTestDataButton_clicked();
