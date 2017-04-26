@@ -1,6 +1,5 @@
-#include "GLWidget.h"
+#include "glwidget.h"
 
-#include <qopenglwidget.h>
 #include <QMouseEvent>
 #include <QDir>
 #ifdef __linux__ 
@@ -12,94 +11,42 @@
 #endif
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include "glsw.h"
-#include "MainWindow.h"
 
-const float msPerFrame = 50.0f;
-
-typedef struct {
-	GLuint modelViewMatrix;
-	GLuint projMatrix;
-	GLuint nearPlane;
-	GLuint texture_ShadowMap;
-	GLuint contourEnabled;
-	GLuint ambientOcclusionEnabled;
-	GLuint contourConstant;
-	GLuint contourWidth;
-	GLuint contourDepthFactor;
-	GLuint ambientFactor;
-	GLuint ambientIntensity;
-	GLuint diffuseFactor;
-	GLuint specularFactor;
-	GLuint shadowModelViewMatrix;
-	GLuint shadowProjMatrix;
-	GLuint lightVec;
-	GLuint shadowEnabled;
-} ShaderUniformsMolecules;
-
-static ShaderUniformsMolecules UniformsMolecules;
-
-
+#include "mainwindow.h"
 
 GLWidget::GLWidget(QWidget *parent, MainWindow *mainWindow)
     : QOpenGLWidget(parent)
 {
 	mainWindow = mainWindow;
-	fileSystemWatcher = new QFileSystemWatcher(this);
-	connect(fileSystemWatcher, SIGNAL(fileChanged(const QString &)), this, SLOT(fileChanged(const QString &)));
-
-	// watch all shader of the shader folder
-	// every time a shader changes it will be recompiled on the fly
-	QDir shaderDir(QCoreApplication::applicationDirPath() + "/../../src/shader/");
-	QFileInfoList files = shaderDir.entryInfoList();
-	qDebug() << "List of shaders:";
-	foreach(QFileInfo file, files) {
-		if (file.isFile()) {
-			qDebug() << file.fileName();
-			fileSystemWatcher->addPath(file.absoluteFilePath());
-		}
-	}
-	if (files.size() == 0)
-		qDebug() << "<none>";
-	initglsw();
 
 	renderMode = RenderMode::NONE;
-	alwaysLit = false;
 	lineHaloWidth = 0.2f;
-
-	currentFrame = 0;
 	nrLines = 0;
 
-	ambientFactor = 0.2f;
-	diffuseFactor = 0.9f;
-	specularFactor = 0.3f;
-	shininess = 128.0f;
-
 }
-
 
 GLWidget::~GLWidget()
 {
 	delete logger; logger = nullptr;
-	glswShutdown();
 }
 
-void GLWidget::initglsw()
+void GLWidget::initShaders()
 {
-	glswInit();
-	QString str = QCoreApplication::applicationDirPath() + "/../src/shader/";
-	QByteArray ba = str.toLatin1();
-	const char *shader_path = ba.data();
-	glswSetPath(shader_path, ".glsl");
-	glswAddDirectiveToken("", "#version 330");
+	simpleLineShader = new QOpenGLShaderProgram(QOpenGLContext::currentContext());
+	simpleLineShader->addShaderFromSourceFile(QOpenGLShader::Vertex, "/shaders/simple_line_shader.vert");
+	simpleLineShader->addShaderFromSourceFile(QOpenGLShader::Fragment, "/shaders/simple_line_shader.frag");
+	simpleLineShader->link();
+
 }
 
 void GLWidget::cleanup()
 {
 	// makes the widget's rendering context the current OpenGL rendering context
 	makeCurrent();
-	//vao.destroy
-	shaderprogramLines = 0;
+
+	vaoLines.destroy();
+	simpleLineShader = nullptr;
+
 	doneCurrent();
 }
 
@@ -120,15 +67,11 @@ void GLWidget::initializeGL()
 	connect(logger, &QOpenGLDebugLogger::messageLogged, this, &GLWidget::printDebugMsg);
 	logger->startLogging();
 
-	if (!vao_lines.create()) {
+	if (!vaoLines.create()) {
 		qDebug() << "error creating vao";
 	}
 
-	shaderprogramLines = new QOpenGLShaderProgram();
-	vertexShaderLines = new QOpenGLShader(QOpenGLShader::Vertex);
-	geomShaderLines = new QOpenGLShader(QOpenGLShader::Geometry);
-	fragmentShaderLines = new QOpenGLShader(QOpenGLShader::Fragment);
-
+	initShaders();
 
 	// GL_NVX_gpu_memory_info is an extension by NVIDIA
 	// that provides applications visibility into GPU
@@ -151,8 +94,8 @@ void GLWidget::initializeGL()
 
 	float cur_avail_mem_mb = float(cur_avail_mem_kb) / 1024.0f;
 	float total_mem_mb = float(total_mem_kb) / 1024.0f;
-	//mainWindow->displayTotalGPUMemory(total_mem_mb);
-	//mainWindow->displayUsedGPUMemory(0);
+	//mainWindow->displayTotalGPUMemory(total_mem_mb); // TODO FIX SEGFAULT
+	//mainWindow->displayUsedGPUMemory(0); // TODO FIX SEGFAULT
 
 	// start scene update and paint timer
 	connect(&paintTimer, SIGNAL(timeout()), this, SLOT(update()));
@@ -169,21 +112,20 @@ void GLWidget::initLineRenderMode(std::vector<std::vector<glm::vec3> > *lines)
 	makeCurrent();
 
 	this->lines = lines;
-	renderMode = RenderMode::NETCDF;
+	renderMode = RenderMode::LINES;
 
-	shaderprogramLines->bind();
-	loadLineShader();
+	simpleLineShader->bind();
 
-	QOpenGLVertexArrayObject::Binder vaoBinder(&vao_lines);
+	QOpenGLVertexArrayObject::Binder vaoBinder(&vaoLines);
 	QOpenGLFunctions *f = QOpenGLContext::currentContext()->functions();
 
 	// TODO: bind positions etc.
 
-	shaderprogramLines->release();
-	allocateGPUBuffer(0);
+	simpleLineShader->release();
+	allocateGPUBuffer();
 }
 
-void GLWidget::allocateGPUBuffer(int frameNr)
+void GLWidget::allocateGPUBuffer()
 {
 	// makes the widget's rendering context the current OpenGL rendering context
 	makeCurrent();
@@ -193,10 +135,9 @@ void GLWidget::allocateGPUBuffer(int frameNr)
 
 	for (size_t i = 0; i < nrLines; ++i) {
 		std::vector<glm::vec3> line = (*lines)[i];
-		//lineColors.push_back(line.color);
 	}
 
-	QOpenGLVertexArrayObject::Binder vaoBinder(&vao_lines); // destructor unbinds (i.e. when out of scope)
+	QOpenGLVertexArrayObject::Binder vaoBinder(&vaoLines); // destructor unbinds (i.e. when out of scope)
 	QOpenGLFunctions *f = QOpenGLContext::currentContext()->functions();
 
 	/* TODO
@@ -238,46 +179,25 @@ void GLWidget::allocateGPUBuffer(int frameNr)
 		glGetIntegerv(GL_GPU_MEMORY_INFO_TOTAL_AVAILABLE_MEMORY_NVX, &total_mem_kb);
 		glGetIntegerv(GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX, &cur_avail_mem_kb);
 	}
-	mainWindow->displayUsedGPUMemory(float(total_mem_kb - cur_avail_mem_kb) / 1024.0f);
+
+	//mainWindow->displayUsedGPUMemory(float(total_mem_kb - cur_avail_mem_kb) / 1024.0f); // TODO FIX SEGFAULT!!
 }
-
-bool GLWidget::loadLineShader()
-{
-	bool success = false;
-
-	const char *vs = glswGetShader("molecules.Vertex");
-	success = vertexShaderLines->compileSourceCode(vs);
-
-	const char *gs = glswGetShader("molecules.Geometry");
-	success = geomShaderLines->compileSourceCode(gs);
-
-	const char *fs = glswGetShader("molecules.Fragment");
-	success = fragmentShaderLines->compileSourceCode(fs);
-
-	shaderprogramLines->addShader(vertexShaderLines);
-	shaderprogramLines->addShader(geomShaderLines);
-	shaderprogramLines->addShader(fragmentShaderLines);
-	shaderprogramLines->link();
-
-	return success;
-}
-
 
 void GLWidget::paintGL()
 {
 	calculateFPS();
+
 	switch (renderMode) {
 		case(RenderMode::NONE):
 			break; // do nothing
-		case(RenderMode::PDB):
-			// TODO
-			break;
-		case(RenderMode::NETCDF):
+		case(RenderMode::LINES):
 			drawLines();
+			break;
+		case(RenderMode::POINTS):
+			// TODO
 			break;
 		default:
 			break;
-
 	}
 }
 
@@ -286,52 +206,23 @@ void GLWidget::drawLines()
 {
 	QOpenGLFunctions *glf = QOpenGLContext::currentContext()->functions();
 
-	// animate frames
-	if (isPlaying) {
-		qint64 elapsed = animationTimer.elapsed() - lastTime;
-
-		elapsed -= msPerFrame;
-		while (elapsed > 0) {
-			++currentFrame;
-			lastTime = animationTimer.elapsed();
-			elapsed -= msPerFrame;
-
-		}
-		if (currentFrame >= nrFrames) {
-			currentFrame = nrFrames - 1;
-			isPlaying = false;
-		}
-
-		mainWindow->setAnimationFrameGUI(currentFrame);
-		allocateGPUBuffer(currentFrame);
-	}
-
 	/* BIND BUFFERS AND INIT SHADER UNIFORMS */
 
 	// bind vertex array object to bind all vbos associated with it
-	QOpenGLVertexArrayObject::Binder vaoBinder(&vao_lines); // destructor unbinds (i.e. when out of scope)
+	QOpenGLVertexArrayObject::Binder vaoBinder(&vaoLines); // destructor unbinds (i.e. when out of scope)
 	// bind shader program
-	shaderprogramLines->bind();
+	simpleLineShader->bind();
 
 	// set shader uniforms
 	// note that glm uses column vectors, qt uses row vectors, thus transpose
 	QMatrix4x4 viewMat = QMatrix4x4(glm::value_ptr(camera.getViewMatrix())).transposed();
 	QMatrix4x4 projMat = QMatrix4x4(glm::value_ptr(camera.getProjectionMatrix())).transposed();
 	//QVector3D cameraPos = QVector3D(viewMat * QVector4D(m_camera.getPosition().x, m_camera.getPosition().y, m_camera.getPosition().z, 1));
-	QVector3D lightPos;
-	if (alwaysLit) {
-		lightPos = QVector3D(viewMat.transposed() * QVector4D(0, 0, 100, 1)); // apply camera rotation
-	} else {
-		lightPos = QVector3D(0, 0, 100); // fixed position
-	}
-	shaderprogramLines->setUniformValue(shaderprogramLines->uniformLocation("viewMat"), viewMat);
-	shaderprogramLines->setUniformValue(shaderprogramLines->uniformLocation("projMat"), projMat);
-	shaderprogramLines->setUniformValue(shaderprogramLines->uniformLocation("lightPos"), lightPos); // in view space
-	shaderprogramLines->setUniformValue(shaderprogramLines->uniformLocation("ambientFactor"), ambientFactor);
-	shaderprogramLines->setUniformValue(shaderprogramLines->uniformLocation("diffuseFactor"), diffuseFactor);
-	shaderprogramLines->setUniformValue(shaderprogramLines->uniformLocation("specularFactor"), specularFactor);
-	shaderprogramLines->setUniformValue(shaderprogramLines->uniformLocation("shininess"), shininess);
-	shaderprogramLines->setUniformValue(shaderprogramLines->uniformLocation("lineHaloWidth"), lineHaloWidth);
+	QVector3D lightPos = QVector3D(0, 0, 100);
+	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("viewMat"), viewMat);
+	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("projMat"), projMat);
+	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("lightPos"), lightPos); // in view space
+	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("lineHaloWidth"), lineHaloWidth);
 
 	/* DRAW */
 
@@ -342,7 +233,7 @@ void GLWidget::drawLines()
 	glf->glDrawArrays(GL_POINTS, 0, nrLines);
 
 	// unbind shader program
-	shaderprogramLines->release();
+	simpleLineShader->release();
 
 }
 
@@ -355,8 +246,8 @@ void GLWidget::calculateFPS()
 	qint64 timeInterval = currentTime - previousTimeFPS;
 
 	// when timeInterval reaches one second
-	if (timeInterval > ((qint64)1000))
-	{
+	if (timeInterval > ((qint64)1000)) {
+
 		// calculate the number of frames per second
 		fps = frameCount / (timeInterval / 1000.0f);
 
@@ -368,12 +259,9 @@ void GLWidget::calculateFPS()
 
 }
 
-
-
 void GLWidget::resizeGL(int w, int h)
 {
 	camera.setAspect(float(w) / h);
-
 }
 
 void GLWidget::mousePressEvent(QMouseEvent *event)
@@ -397,29 +285,23 @@ void GLWidget::mouseMoveEvent(QMouseEvent *event)
 		camera.rotateAzimuth(dx / 100.0f);
 		camera.rotatePolar(dy / 100.0f);
 	}
-
 	if (event->buttons() & Qt::RightButton) {
 		camera.rotateAzimuth(dx / 100.0f);
 		camera.rotatePolar(dy / 100.0f);
 	}
+
 	lastMousePos = event->pos();
 	update();
 }
 
 void GLWidget::keyPressEvent(QKeyEvent *event)
 {
-	switch (event->key())
-	{
+	switch (event->key()) {
 		case Qt::Key_Space:
-		{
-			// TODO: play/pause animation
 			break;
-		}
 		default:
-		{
 			event->ignore();
 			break;
-		}
 	}
 }
 
@@ -428,30 +310,3 @@ void GLWidget::keyReleaseEvent(QKeyEvent *event)
 
 }
 
-void GLWidget::fileChanged(const QString &path)
-{
-	// reboot glsw, otherwise it will use the old cached shader
-	glswShutdown();
-	initglsw();
-
-	loadLineShader();
-	update();
-}
-
-void GLWidget::playAnimation()
-{
-	animationTimer.start();
-	lastTime = 0;
-	isPlaying = true;
-}
-
-void GLWidget::pauseAnimation()
-{
-	isPlaying = false;
-}
-
-void GLWidget::setAnimationFrame(int frameNr)
-{
-	currentFrame = frameNr;
-	allocateGPUBuffer(frameNr);
-}

@@ -4,15 +4,14 @@ cmake_minimum_required(VERSION 3.1.0)
 # add CMakeLists.txt source dir and cmake module dir to the cmake module path
 # cmake modules are cmake files used e.g. to find library files
 set(CMAKE_MODULE_PATH 
-    ${CMAKE_MODULE_PATH} 
+    ${CMAKE_MODULE_PATH}
     "${CMAKE_SOURCE_DIR}"
-    "${CMAKE_SOURCE_DIR}/CMakeModules"
-    )
+)
 
 # find moc includes (ui files etc.) in corresponding build directories
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON) # run qt moc (meta object compiler, expands Q_OBJECT c++ ui header macro)
-set(CMAKE_AUTOUIC ON) # run qt uic (ui xml to c++ header file compiler)
+#set(CMAKE_AUTOUIC ON) # run qt uic (ui xml to c++ header file compiler)
 
 
 ### EXTERNAL LIBRARIES ###
@@ -32,29 +31,24 @@ find_package(Qt5OpenGLExtensions)
 
 # relative path to every single h and cpp file
 set(SRC_CLASSES 
-    src/Main.cpp
-    src/MainWindow.cpp
-    src/MainWindow.h
-    src/GLWidget.cpp
-    src/GLWidget.h
-    src/Camera.cpp
-    src/Camera.h
-    
-    # glsw (opengl shader wrangler)
-    # and bstrlib (better string lib), required by glsw
-    src/bstrlib.c
-    src/bstrlib.h
-    src/glsw.c
-    src/glsw.h
-        )
+    src/main.cpp
+    src/mainwindow.cpp
+    src/mainwindow.h
+    src/glwidget.cpp
+    src/glwidget.h
+    src/camera.cpp
+    src/camera.h
+
+)
 	
 # relative path to shader files
 set(SRC_SHADERS
-    src/shader/molecules.glsl
+    src/shaders/simple_line_shader.vert
+    src/shaders/simple_line_shader.frag
 )
 
 QT5_WRAP_UI(UI_HEADERS
-    src/MainWindow.ui
+    src/mainwindow.ui
 )
 		
 # adds an executable target with given name to be built from the source files listed afterwards
@@ -80,3 +74,16 @@ target_link_libraries(
     Qt5::OpenGL
     Qt5::OpenGLExtensions
 )
+
+
+### COPY DATA ###
+
+add_custom_target(shaders)
+
+add_custom_command(TARGET shaders PRE_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/shaders
+        ${CMAKE_BINARY_DIR}/shaders
+)
+
+add_dependencies(${PROJECT_NAME} shaders)

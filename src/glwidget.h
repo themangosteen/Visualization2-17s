@@ -1,6 +1,7 @@
 #ifndef GLWIDGET_H
 #define GLWIDGET_H
 
+#include <QCoreApplication>
 #include <QOpenGLWidget>
 #include <QOpenGLFunctions>
 #include <QOpenGLDebugLogger>
@@ -8,11 +9,10 @@
 #include <QOpenGLBuffer>
 #include <QGLShader>
 #include <QOpenGLShaderProgram>
-#include <QFileSystemWatcher>
 #include <QElapsedTimer>
 #include <QTimer>
 
-#include "Camera.h"
+#include "camera.h"
 
 class MainWindow;
 
@@ -28,15 +28,6 @@ public:
 
 	void initLineRenderMode(std::vector<std::vector<glm::vec3> > *lines);
 
-	void playAnimation();
-	void pauseAnimation();
-	void setAnimationFrame(int frameNr);
-
-	float ambientFactor;
-	float diffuseFactor;
-	float specularFactor;
-	float shininess;
-	bool alwaysLit;
 	float lineHaloDepth;
 	float lineHaloWidth;
 
@@ -48,8 +39,8 @@ public:
 	enum RenderMode
 	{
 		NONE,
-		PDB,   // RCSB Protein Data Bank files
-		NETCDF // Network Common Data Form files
+		LINES,
+		POINTS
 	} renderMode;
 
 public slots:
@@ -73,49 +64,29 @@ protected slots:
 	void paintGL() Q_DECL_OVERRIDE;
 	void initializeGL() Q_DECL_OVERRIDE;
 	void resizeGL(int w, int h) Q_DECL_OVERRIDE;
-	void fileChanged(const QString &path);
 
 private:
 
+	void initShaders();
+
+	void allocateGPUBuffer();
 	void drawLines();
-
-	bool loadLineShader();
-
-	void initglsw();
-
-	void allocateGPUBuffer(int frameNr);
 
 	void calculateFPS();
 
 	Camera camera;
 
-	size_t nrLines;
-
 	// CPU line geometry data
+	size_t nrLines;
 	std::vector<std::vector<glm::vec3> > *lines; // vector of lines (vector of vector of points)
 
 	// GPU line geometry data and shaders
-	QOpenGLShaderProgram *shaderprogramLines;
-	QOpenGLShader *vertexShaderLines;
-	QOpenGLShader *geomShaderLines;
-	QOpenGLShader *fragmentShaderLines;
-	QOpenGLVertexArrayObject vao_lines; // a VAO remembers states of buffer objects, allowing to easily bind/unbind different buffer states for rendering different objects in a scene.
+	QOpenGLShaderProgram *simpleLineShader;
+	QOpenGLVertexArrayObject vaoLines; // a VAO remembers states of buffer objects, allowing to easily bind/unbind different buffer states for rendering different objects in a scene.
 
-	// ------------------------------
+	// GUI ELEMENTS
 
 	QPoint lastMousePos; // last mouse position (to determine movement delta)
-
-	int projMatShaderLocation; // projection matrix location in shader
-	int modelViewMatShaderLocation; // model view matrix location in shader
-
-	QFileSystemWatcher *fileSystemWatcher;
-
-	int currentFrame;
-	int nrFrames = 600;
-	bool isPlaying;
-	qint64 lastTime;
-
-	QElapsedTimer animationTimer;
 
 	// vars to measure fps
 	size_t frameCount = 0;
@@ -135,6 +106,7 @@ private:
 	void printDebugMsg(const QOpenGLDebugMessage &msg) { qDebug() << qPrintable(msg.message()); }
 
 	MainWindow *mainWindow;
+
 };
 
 #endif
