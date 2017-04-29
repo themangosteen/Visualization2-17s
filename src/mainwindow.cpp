@@ -11,10 +11,10 @@
 
 
 MainWindow::MainWindow(QWidget *parent) :
-    QMainWindow(parent),
-    ui(new Ui::MainWindow)
+        QMainWindow(parent),
+        ui(new Ui::MainWindow)
 {
-	ui->setupUi(this);
+    ui->setupUi(this);
 
     QLayout *layout = ui->controls->layout();
     layout->setAlignment(Qt::AlignTop);
@@ -44,35 +44,88 @@ MainWindow::MainWindow(QWidget *parent) :
 
 MainWindow::~MainWindow()
 {
-	delete ui;
+    delete ui;
 }
 
 void MainWindow::generateTestData(int numVertices, glm::vec3 boundingBoxMin, glm::vec3 boundingBoxMax)
 {
-	datasetLines.clear();
+    datasetLines.clear();
 
     std::vector<glm::vec3> line1;
-	srand(time(NULL)); // change pseudorandom number generator seed
+    srand(time(NULL)); // change pseudorandom number generator seed
 
-	// generate random line vertices within given bounding box
-	for (int i = 0; i < numVertices; ++i) {
-		float rx = ((boundingBoxMax.x - boundingBoxMin.x) * ((float)rand()/RAND_MAX)) + boundingBoxMin.x;
-		float ry = ((boundingBoxMax.y - boundingBoxMin.y) * ((float)rand()/RAND_MAX)) + boundingBoxMin.y;
-		float rz = ((boundingBoxMax.z - boundingBoxMin.z) * ((float)rand()/RAND_MAX)) + boundingBoxMin.z;
-		line1.push_back(glm::vec3(rx, ry, rz));
-	}
+    // generate random line vertices within given bounding box
+    // OLD VERSION
+//    for (int i = 0; i < numVertices; ++i) {
+//        float rx = ((boundingBoxMax.x - boundingBoxMin.x) * ((float)rand()/RAND_MAX)) + boundingBoxMin.x;
+//        float ry = ((boundingBoxMax.y - boundingBoxMin.y) * ((float)rand()/RAND_MAX)) + boundingBoxMin.y;
+//        float rz = ((boundingBoxMax.z - boundingBoxMin.z) * ((float)rand()/RAND_MAX)) + boundingBoxMin.z;
+//        line1.push_back(glm::vec3(rx, ry, rz));
+//    }
+
+    glm::vec3 currentPosition = glm::vec3(boundingBoxMin);
+    glm::vec3 currentDirection = glm::normalize(glm::vec3(boundingBoxMin));
+    glm::vec3 currentTargetPoint = glm::normalize(glm::vec3(boundingBoxMax-boundingBoxMin));
+    glm::vec3 targetDirection;
+    float stepSize = 0.01f;
+    float curviness = 0.8f;
+    float directionChangeProbability = 0.07f;
+    float minDistanceToTargetPoint = 0.06;
+    bool directionChangedBecauseOutOfBoundingBox = false;
+    for (int i = 0; i < numVertices; ++i) {
+        // determine if the targetDirection should be changed (outside bounding box or random direction change)
+        if(
+           currentPosition.x>boundingBoxMax.x
+           || currentPosition.x<boundingBoxMin.x
+           || currentPosition.y>boundingBoxMax.y
+           || currentPosition.y<boundingBoxMin.y
+           || currentPosition.z>boundingBoxMax.z
+           || currentPosition.z<boundingBoxMin.z) {
+
+            // outside bounding box, change direction and prevent new direction change until back in bounding box
+            if(!directionChangedBecauseOutOfBoundingBox) {  // direction not already changed because of bounding box
+                directionChangedBecauseOutOfBoundingBox = true;
+                // get random point in bounding box as new target
+                float rx = ((boundingBoxMax.x - boundingBoxMin.x) * ((float) rand() / RAND_MAX)) + boundingBoxMin.x;
+                float ry = ((boundingBoxMax.y - boundingBoxMin.y) * ((float) rand() / RAND_MAX)) + boundingBoxMin.y;
+                float rz = ((boundingBoxMax.z - boundingBoxMin.z) * ((float) rand() / RAND_MAX)) + boundingBoxMin.z;
+
+                currentTargetPoint = glm::vec3(rx, ry, rz);
+            }
+        } else {
+            // back in bounding box, new direction change allowed
+            directionChangedBecauseOutOfBoundingBox = false;
+
+            // change target point randomly or if to near to the target point
+            if(glm::length(currentPosition-currentTargetPoint)<minDistanceToTargetPoint  // this line throws incorrectly an error
+                    || ((float)rand()/RAND_MAX)<directionChangeProbability){
+                float rx = ((boundingBoxMax.x - boundingBoxMin.x) * ((float) rand() / RAND_MAX)) + boundingBoxMin.x;
+                float ry = ((boundingBoxMax.y - boundingBoxMin.y) * ((float) rand() / RAND_MAX)) + boundingBoxMin.y;
+                float rz = ((boundingBoxMax.z - boundingBoxMin.z) * ((float) rand() / RAND_MAX)) + boundingBoxMin.z;
+
+                currentTargetPoint = glm::vec3(rx, ry, rz);
+            }
+        }
+        targetDirection = glm::normalize(currentTargetPoint - currentPosition);
+        // change the direction (approach target direction)
+        currentDirection = glm::normalize(curviness*currentDirection + (1-curviness)*targetDirection);
+        // update position
+        currentPosition += currentDirection*stepSize;
+
+        line1.push_back(glm::vec3(currentPosition));
+    }
 
     datasetLines.push_back(line1);
-	qDebug() << "Test line data generated:" << numVertices << "vertices";
+    qDebug() << "Test line data generated:" << numVertices << "vertices";
 
-	glWidget->initLineRenderMode(&datasetLines);
+    glWidget->initLineRenderMode(&datasetLines);
 }
 
 void MainWindow::openFileAction()
 {
-	QString filename = QFileDialog::getOpenFileName(this, "Open dataset file...", 0, tr("Data Files (*.sop)"));
+    QString filename = QFileDialog::getOpenFileName(this, "Open dataset file...", 0, tr("Data Files (*.sop)"));
 
-	if (!filename.isEmpty()) {
+    if (!filename.isEmpty()) {
         // store filename
         fileType.filename = filename;
         std::string fn = filename.toStdString();
@@ -82,31 +135,31 @@ void MainWindow::openFileAction()
         ui->progressBar->setEnabled(true);
         ui->labelTop->setText("Loading data ...");
 
-		std::string filenameExtension = fn.substr(fn.find_last_of(".") + 1);
-		if (filenameExtension == "sop") { // LOAD SOP DATA
-			success = false;
-			ui->labelTop->setText("Yes we would love to load SOP data too.");
+        std::string filenameExtension = fn.substr(fn.find_last_of(".") + 1);
+        if (filenameExtension == "sop") { // LOAD SOP DATA
+            success = false;
+            ui->labelTop->setText("Yes we would love to load SOP data too.");
         }
-		else {
-			success = false;
-			ui->labelTop->setText("Error loading file " + filename + ": Unknown filename extension.");
-		}
+        else {
+            success = false;
+            ui->labelTop->setText("Error loading file " + filename + ": Unknown filename extension.");
+        }
 
         ui->progressBar->setEnabled(false);
 
         // status message
-		if (success) {
+        if (success) {
             QString type;
-			if (fileType.type == SOP) type = "SOP";
+            if (fileType.type == SOP) type = "SOP";
             ui->labelTop->setText("File LOADED [" + filename + "] - Type [" + type + "]");
 
-			glWidget->initLineRenderMode(&datasetLines);
+            glWidget->initLineRenderMode(&datasetLines);
         }
-		else {
+        else {
             ui->labelTop->setText("ERROR loading file " + filename + "!");
             ui->progressBar->setValue(0);
         }
-	}
+    }
 }
 
 void MainWindow::renderModeChanged(int index)
@@ -166,5 +219,5 @@ void MainWindow::displayFPS(int fps)
 
 void MainWindow::on_generateTestDataButton_clicked()
 {
-	generateTestData(50, glm::vec3(-1.f,-1.f,-1.f), glm::vec3(1.f,1.f,1.f));
+    generateTestData(20000, glm::vec3(-1.f,-1.f,-1.f), glm::vec3(1.f,1.f,1.f));
 }
