@@ -11,5 +11,7 @@ uniform vec3 color;
 
 void main()
 {
-    outColor = vec4(uv_vert.y, uv_vert.y, uv_vert.y, 1.0);
+//    outColor = vec4(uv_vert.y, uv_vert.y, uv_vert.y, 1.0);
+//    outColor = vec4(dir_vert.x, dir_vert.y, dir_vert.z, 1.0);
+    outColor = vec4(1,1,1,1);
 }

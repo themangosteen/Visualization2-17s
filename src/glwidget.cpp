@@ -20,7 +20,7 @@ GLWidget::GLWidget(QWidget *parent, MainWindow *mainWindow)
 	mainWindow = mainWindow;
 
 	renderMode = RenderMode::NONE;
-	lineHaloWidth = 0.2f;
+	lineHaloWidth = 0.03f;
 	nrLines = 0;
 
 }
@@ -142,7 +142,6 @@ void GLWidget::allocateGPUBufferLineData()
 	std::vector<glm::vec2> line1UV = (*linesUV)[0];
 
 	qDebug() << "line number of vertices:" << line1.size();
-	qDebug() << "line number of vertices:" << line1Directions.size();
 
 	QOpenGLVertexArrayObject::Binder vaoBinder(&vaoLines); // destructor unbinds (i.e. when out of scope)
 	QOpenGLFunctions *f = QOpenGLContext::currentContext()->functions();
@@ -184,7 +183,7 @@ void GLWidget::allocateGPUBufferLineData()
 	// bind vbo to shader attribute
 	int uvAttribShaderIndex = simpleLineShader->attributeLocation("uv");
 	simpleLineShader->enableAttributeArray(uvAttribShaderIndex); // enable bound vertex buffer at this index
-	simpleLineShader->setAttributeBuffer(uvAttribShaderIndex, GL_FLOAT, 0, 3); // 3 components x,y,z
+	simpleLineShader->setAttributeBuffer(uvAttribShaderIndex, GL_FLOAT, 0, 2); // 2 components u,v
 	vboLinesUV.release();
 
 	// unbind shader program
@@ -237,19 +236,23 @@ void GLWidget::drawLines()
 	QMatrix4x4 viewMat = QMatrix4x4(glm::value_ptr(camera.getViewMatrix())).transposed();
 	QMatrix4x4 projMat = QMatrix4x4(glm::value_ptr(camera.getProjectionMatrix())).transposed();
 	//QVector3D cameraPos = QVector3D(viewMat * QVector4D(m_camera.getPosition().x, m_camera.getPosition().y, m_camera.getPosition().z, 1));
+	glm::vec3 camPosGLM = camera.getPosition();
+	QVector3D camPos = QVector3D(camPosGLM.x,camPosGLM.y,camPosGLM.z);
+//	qDebug() << "CameraPos: "<<camPos;
 	QVector3D lightPos = QVector3D(0, 0, 100);
 	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("viewMat"), viewMat);
 	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("projMat"), projMat);
 	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("lightPos"), lightPos); // in view space
 	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("lineHaloWidth"), lineHaloWidth);
 	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("color"), 0.9f, 0.3f, 0.8f);
+	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("cameraPos"), camPos);
 
 	// DRAW
 
 	glf->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	//glf->glEnable(GL_BLEND); glf->glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	glf->glDrawArrays(GL_LINE_STRIP, 0, (*lines)[0].size()); // TODO change to triangle strip
+	glf->glDrawArrays(GL_TRIANGLE_STRIP, 0, (*lines)[0].size()); // TODO change to triangle strip
 
 	simpleLineShader->release();
 }

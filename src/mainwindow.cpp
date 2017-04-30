@@ -54,8 +54,9 @@ void MainWindow::generateTestData(int numVertices, glm::vec3 boundingBoxMin, glm
     datasetLinesUV.clear();
 
     std::vector<glm::vec3> line1;
-    std::vector<glm::vec3> line1Directions;
-    std::vector<glm::vec2> line1UV;
+    std::vector<glm::vec3> line1Doubled;
+    std::vector<glm::vec3> line1DirectionsDoubled;
+    std::vector<glm::vec2> line1UVDoubled;
     srand(time(NULL)); // change pseudorandom number generator seed
 
     // generate random line vertices within given bounding box
@@ -125,28 +126,34 @@ void MainWindow::generateTestData(int numVertices, glm::vec3 boundingBoxMin, glm
     for (int i = 0; i < line1.size(); ++i) {
         if(i==0){ //first element
             directionFromThePoint = glm::normalize(line1[i+1]-line1[i]);
-            line1Directions.push_back(glm::vec3(directionFromThePoint));
+            line1DirectionsDoubled.push_back(glm::vec3(directionFromThePoint));
+            line1DirectionsDoubled.push_back(glm::vec3(directionFromThePoint));
         }
         else if(i+1 == line1.size()){ // last element
             directionToThePoint = glm::normalize(line1[i]-line1[i-1]);
-            line1Directions.push_back(glm::vec3(directionToThePoint));
+            line1DirectionsDoubled.push_back(glm::vec3(directionToThePoint));
+            line1DirectionsDoubled.push_back(glm::vec3(directionToThePoint));
         }
         else{
             directionToThePoint = glm::normalize(line1[i]-line1[i-1]);
             directionFromThePoint = glm::normalize(line1[i+1]-line1[i]);
-            line1Directions.push_back(glm::normalize(glm::vec3(directionToThePoint+directionFromThePoint)/2.f));
+            line1DirectionsDoubled.push_back(glm::normalize(glm::vec3(directionToThePoint+directionFromThePoint)));
+            line1DirectionsDoubled.push_back(glm::normalize(glm::vec3(directionToThePoint+directionFromThePoint)));
         }
 //         UV coordinates: The u-coordinate is interpo-
 //        lated along the length of the line, while the v-coordinate is set to 1 for
 //        the “left” side of the strip and to 0 for its “right” side.
         float u = ((float)i)/(line1.size()-1);
-        float v = 1; //todo
-        line1UV.push_back(glm::vec2(u,v));
+        line1UVDoubled.push_back(glm::vec2(u,0));
+        line1UVDoubled.push_back(glm::vec2(u,1));
+
+        line1Doubled.push_back(line1[i]);
+        line1Doubled.push_back(line1[i]);
     }
 
-    datasetLines.push_back(line1);
-    datasetLinesDirections.push_back(line1Directions);
-    datasetLinesUV.push_back(line1UV);
+    datasetLines.push_back(line1Doubled);
+    datasetLinesDirections.push_back(line1DirectionsDoubled);
+    datasetLinesUV.push_back(line1UVDoubled);
     qDebug() << "Test line data generated:" << numVertices << "vertices";
 
     glWidget->initLineRenderMode(&datasetLines, &datasetLinesDirections, &datasetLinesUV);

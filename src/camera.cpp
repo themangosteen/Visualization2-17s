@@ -47,6 +47,7 @@ void Camera::buildViewMatrix(void)
 	pos.z = mRadius * cosf(mAzimuth) * sinf(mPolar);
 	pos.x = mRadius * sinf(mAzimuth) * sinf(mPolar);
 	pos.y = mRadius * cosf(mPolar);
+	mPos = pos;
 	mViewMatrix = glm::lookAt(pos, mTarget, mUp);
 }
 
