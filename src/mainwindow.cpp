@@ -69,8 +69,8 @@ void MainWindow::generateTestData(int numVertices, glm::vec3 boundingBoxMin, glm
 //    }
 
     glm::vec3 currentPosition = glm::vec3(boundingBoxMin);
-    glm::vec3 currentDirection = glm::normalize(glm::vec3(boundingBoxMin));
-    glm::vec3 currentTargetPoint = glm::normalize(glm::vec3(boundingBoxMax-boundingBoxMin));
+    glm::vec3 currentTargetPoint = glm::vec3((boundingBoxMax+boundingBoxMin)/2.f);
+    glm::vec3 currentDirection = glm::normalize(glm::vec3(currentTargetPoint-currentPosition));
     glm::vec3 targetDirection;
     float stepSize = 0.01f;
     float curviness = 0.8f;

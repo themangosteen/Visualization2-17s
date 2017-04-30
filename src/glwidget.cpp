@@ -21,6 +21,7 @@ GLWidget::GLWidget(QWidget *parent, MainWindow *mainWindow)
 
 	renderMode = RenderMode::NONE;
 	lineHaloWidth = 0.03f;
+    lineWidthPercentage = 0.3f;
 	nrLines = 0;
 
 }
@@ -246,6 +247,7 @@ void GLWidget::drawLines()
 	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("lineHaloWidth"), lineHaloWidth);
 	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("color"), 0.9f, 0.3f, 0.8f);
 	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("cameraPos"), camPos);
+	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("lineWidthPercentage"), lineWidthPercentage);
 
 	// DRAW
 

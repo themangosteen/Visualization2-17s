@@ -30,6 +30,7 @@ public:
 
 	float lineHaloDepth;
 	float lineHaloWidth;
+	float lineWidthPercentage; // percentage of the whole triangle strip which is the line (rest is halo)
 
 	inline QImage getImage()
 	{

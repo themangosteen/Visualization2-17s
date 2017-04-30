@@ -17,7 +17,7 @@ uniform float lineHaloWidth;
 
 void main()
 {
-    vec3 viewAlignedPosition = position + normalize(cross(position-cameraPos, direction))*(uv.y-0.5)*lineHaloWidth;
+    vec3 viewAlignedPosition = position + normalize(cross(position-cameraPos, direction))*(uv.y-0.5)*lineHaloWidth; // eq. 1 from Everts et al.
     gl_Position = projMat * viewMat * vec4(viewAlignedPosition, 1.0);
     dir_vert = direction;
     uv_vert = uv;
