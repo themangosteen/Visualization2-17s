@@ -26,7 +26,7 @@ public:
 	GLWidget(QWidget *parent, MainWindow *mainWindow);
 	~GLWidget();
 
-	void initLineRenderMode(std::vector<std::vector<glm::vec3> > *lines);
+	void initLineRenderMode(std::vector<std::vector<glm::vec3> > *lines, std::vector<std::vector<glm::vec3> > *linesDirections, std::vector<std::vector<glm::vec2> > *linesUV);
 
 	float lineHaloDepth;
 	float lineHaloWidth;
@@ -79,11 +79,15 @@ private:
 	// CPU line geometry data
 	size_t nrLines;
 	std::vector<std::vector<glm::vec3> > *lines; // vector of lines (vector of vector of 3D points)
+	std::vector<std::vector<glm::vec3> > *linesDirections; // vector of line directions (every vertex has a direction)
+	std::vector<std::vector<glm::vec2> > *linesUV; // vector of line UVs
 
 	// GPU line geometry data and shaders
 	QOpenGLShaderProgram *simpleLineShader;
 	QOpenGLVertexArrayObject vaoLines; // a VAO remembers states of buffer objects, allowing to easily bind/unbind different buffer states for rendering different objects in a scene.
 	QOpenGLBuffer vboLines; // actual line data (array of 3D points)
+	QOpenGLBuffer vboLinesDirection; // direction of the line segment (at the vertex)
+	QOpenGLBuffer vboLinesUV; // direction of the line segment (at the vertex)
 
 	// GUI ELEMENTS
 

@@ -69,6 +69,8 @@ private:
 
     GLWidget *glWidget;
     std::vector<std::vector<glm::vec3> > datasetLines;
+    std::vector<std::vector<glm::vec3> > datasetLinesDirections;
+    std::vector<std::vector<glm::vec2> > datasetLinesUV;
 };
 
 #endif // MAINWINDOW_H

@@ -50,8 +50,12 @@ MainWindow::~MainWindow()
 void MainWindow::generateTestData(int numVertices, glm::vec3 boundingBoxMin, glm::vec3 boundingBoxMax)
 {
     datasetLines.clear();
+    datasetLinesDirections.clear();
+    datasetLinesUV.clear();
 
     std::vector<glm::vec3> line1;
+    std::vector<glm::vec3> line1Directions;
+    std::vector<glm::vec2> line1UV;
     srand(time(NULL)); // change pseudorandom number generator seed
 
     // generate random line vertices within given bounding box
@@ -97,7 +101,7 @@ void MainWindow::generateTestData(int numVertices, glm::vec3 boundingBoxMin, glm
             directionChangedBecauseOutOfBoundingBox = false;
 
             // change target point randomly or if to near to the target point
-            if(glm::length(currentPosition-currentTargetPoint)<minDistanceToTargetPoint  // this line throws incorrectly an error
+            if(glm::length(currentPosition-currentTargetPoint)<minDistanceToTargetPoint  // this line incorrectly throws an error
                     || ((float)rand()/RAND_MAX)<directionChangeProbability){
                 float rx = ((boundingBoxMax.x - boundingBoxMin.x) * ((float) rand() / RAND_MAX)) + boundingBoxMin.x;
                 float ry = ((boundingBoxMax.y - boundingBoxMin.y) * ((float) rand() / RAND_MAX)) + boundingBoxMin.y;
@@ -114,11 +118,38 @@ void MainWindow::generateTestData(int numVertices, glm::vec3 boundingBoxMin, glm
 
         line1.push_back(glm::vec3(currentPosition));
     }
+    // postprocess line data
+    glm::vec3 directionToThePoint;
+    glm::vec3 directionFromThePoint;
+
+    for (int i = 0; i < line1.size(); ++i) {
+        if(i==0){ //first element
+            directionFromThePoint = glm::normalize(line1[i+1]-line1[i]);
+            line1Directions.push_back(glm::vec3(directionFromThePoint));
+        }
+        else if(i+1 == line1.size()){ // last element
+            directionToThePoint = glm::normalize(line1[i]-line1[i-1]);
+            line1Directions.push_back(glm::vec3(directionToThePoint));
+        }
+        else{
+            directionToThePoint = glm::normalize(line1[i]-line1[i-1]);
+            directionFromThePoint = glm::normalize(line1[i+1]-line1[i]);
+            line1Directions.push_back(glm::normalize(glm::vec3(directionToThePoint+directionFromThePoint)/2.f));
+        }
+//         UV coordinates: The u-coordinate is interpo-
+//        lated along the length of the line, while the v-coordinate is set to 1 for
+//        the “left” side of the strip and to 0 for its “right” side.
+        float u = ((float)i)/(line1.size()-1);
+        float v = 1; //todo
+        line1UV.push_back(glm::vec2(u,v));
+    }
 
     datasetLines.push_back(line1);
+    datasetLinesDirections.push_back(line1Directions);
+    datasetLinesUV.push_back(line1UV);
     qDebug() << "Test line data generated:" << numVertices << "vertices";
 
-    glWidget->initLineRenderMode(&datasetLines);
+    glWidget->initLineRenderMode(&datasetLines, &datasetLinesDirections, &datasetLinesUV);
 }
 
 void MainWindow::openFileAction()
@@ -153,7 +184,7 @@ void MainWindow::openFileAction()
             if (fileType.type == SOP) type = "SOP";
             ui->labelTop->setText("File LOADED [" + filename + "] - Type [" + type + "]");
 
-            glWidget->initLineRenderMode(&datasetLines);
+            glWidget->initLineRenderMode(&datasetLines, nullptr, nullptr);
         }
         else {
             ui->labelTop->setText("ERROR loading file " + filename + "!");

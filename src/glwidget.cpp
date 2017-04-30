@@ -2,7 +2,7 @@
 
 #include <QMouseEvent>
 #include <QDir>
-#ifdef __linux__ 
+#ifdef __linux__
 #include <GL/glut.h>
 #elif _WIN32
 #include <gl/GLU.h>
@@ -15,7 +15,7 @@
 #include "mainwindow.h"
 
 GLWidget::GLWidget(QWidget *parent, MainWindow *mainWindow)
-    : QOpenGLWidget(parent)
+		: QOpenGLWidget(parent)
 {
 	mainWindow = mainWindow;
 
@@ -107,12 +107,14 @@ void GLWidget::initializeGL()
 }
 
 
-void GLWidget::initLineRenderMode(std::vector<std::vector<glm::vec3> > *lines)
+void GLWidget::initLineRenderMode(std::vector<std::vector<glm::vec3> > *lines, std::vector<std::vector<glm::vec3> > *linesDirections, std::vector<std::vector<glm::vec2> > *linesUV)
 {
 	// makes the widget's rendering context the current OpenGL rendering context
 	makeCurrent();
 
 	this->lines = lines;
+	this->linesDirections = linesDirections;
+	this->linesUV = linesUV;
 	renderMode = RenderMode::LINES;
 
 	// allocate data
@@ -136,11 +138,16 @@ void GLWidget::allocateGPUBufferLineData()
 	}
 
 	std::vector<glm::vec3> line1 = (*lines)[0];
+	std::vector<glm::vec3> line1Directions = (*linesDirections)[0];
+	std::vector<glm::vec2> line1UV = (*linesUV)[0];
+
 	qDebug() << "line number of vertices:" << line1.size();
+	qDebug() << "line number of vertices:" << line1Directions.size();
 
 	QOpenGLVertexArrayObject::Binder vaoBinder(&vaoLines); // destructor unbinds (i.e. when out of scope)
 	QOpenGLFunctions *f = QOpenGLContext::currentContext()->functions();
 
+	// POSITION
 	// allocate line vertex data to vertex buffer object
 	vboLines.create();
 	vboLines.bind();
@@ -152,9 +159,35 @@ void GLWidget::allocateGPUBufferLineData()
 	int positionAttribShaderIndex = simpleLineShader->attributeLocation("position");
 	simpleLineShader->enableAttributeArray(positionAttribShaderIndex); // enable bound vertex buffer at this index
 	simpleLineShader->setAttributeBuffer(positionAttribShaderIndex, GL_FLOAT, 0, 3); // 3 components x,y,z
-
-	// unbind buffers and shader program
 	vboLines.release();
+
+	// DIRECTION
+	// allocate line direction data to vertex buffer object
+	vboLinesDirection.create();
+	vboLinesDirection.bind();
+	vboLinesDirection.setUsagePattern(QOpenGLBuffer::StaticDraw);
+	vboLinesDirection.allocate(&line1Directions[0], line1Directions.size() * sizeof(glm::vec3)); // just first line for now
+
+	// bind vbo to shader attribute
+	int directionAttribShaderIndex = simpleLineShader->attributeLocation("direction");
+	simpleLineShader->enableAttributeArray(directionAttribShaderIndex); // enable bound vertex buffer at this index
+	simpleLineShader->setAttributeBuffer(directionAttribShaderIndex, GL_FLOAT, 0, 3); // 3 components x,y,z
+	vboLinesDirection.release();
+
+	// UV
+	// allocate line direction data to vertex buffer object
+	vboLinesUV.create();
+	vboLinesUV.bind();
+	vboLinesUV.setUsagePattern(QOpenGLBuffer::StaticDraw);
+	vboLinesUV.allocate(&line1UV[0], line1UV.size() * sizeof(glm::vec2)); // just first line for now
+
+	// bind vbo to shader attribute
+	int uvAttribShaderIndex = simpleLineShader->attributeLocation("uv");
+	simpleLineShader->enableAttributeArray(uvAttribShaderIndex); // enable bound vertex buffer at this index
+	simpleLineShader->setAttributeBuffer(uvAttribShaderIndex, GL_FLOAT, 0, 3); // 3 components x,y,z
+	vboLinesUV.release();
+
+	// unbind shader program
 	simpleLineShader->release();
 
 	// display memory usage
@@ -162,7 +195,11 @@ void GLWidget::allocateGPUBufferLineData()
 		glGetIntegerv(GL_GPU_MEMORY_INFO_TOTAL_AVAILABLE_MEMORY_NVX, &total_mem_kb);
 		glGetIntegerv(GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX, &cur_avail_mem_kb);
 	}
-
+	// check OpenGL error
+	GLenum err;
+	while ((err = glGetError()) != GL_NO_ERROR) {
+		qDebug() << "!!!OpenGL error: " << err;
+	}
 	//mainWindow->displayUsedGPUMemory(float(total_mem_kb - cur_avail_mem_kb) / 1024.0f); // TODO FIX SEGFAULT!!
 }
 
@@ -215,7 +252,6 @@ void GLWidget::drawLines()
 	glf->glDrawArrays(GL_LINE_STRIP, 0, (*lines)[0].size()); // TODO change to triangle strip
 
 	simpleLineShader->release();
-
 }
 
 void GLWidget::calculateFPS()
