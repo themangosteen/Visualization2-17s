@@ -62,63 +62,42 @@ void MainWindow::generateTestData(int numVertices, glm::vec3 boundingBoxMin, glm
     // generate random line vertices within given bounding box
     // OLD VERSION
 //    for (int i = 0; i < numVertices; ++i) {
-//        float rx = ((boundingBoxMax.x - boundingBoxMin.x) * ((float)rand()/RAND_MAX)) + boundingBoxMin.x;
-//        float ry = ((boundingBoxMax.y - boundingBoxMin.y) * ((float)rand()/RAND_MAX)) + boundingBoxMin.y;
-//        float rz = ((boundingBoxMax.z - boundingBoxMin.z) * ((float)rand()/RAND_MAX)) + boundingBoxMin.z;
+
 //        line1.push_back(glm::vec3(rx, ry, rz));
 //    }
 
-    glm::vec3 currentPosition = glm::vec3(boundingBoxMin);
-    glm::vec3 currentTargetPoint = glm::vec3((boundingBoxMax+boundingBoxMin)/2.f);
-    glm::vec3 currentDirection = glm::normalize(glm::vec3(currentTargetPoint-currentPosition));
-    glm::vec3 targetDirection;
-    float stepSize = 0.01f;
-    float curviness = 0.8f;
-    float directionChangeProbability = 0.07f;
-    float minDistanceToTargetPoint = 0.06;
-    bool directionChangedBecauseOutOfBoundingBox = false;
-    for (int i = 0; i < numVertices; ++i) {
-        // determine if the targetDirection should be changed (outside bounding box or random direction change)
-        if(
-           currentPosition.x>boundingBoxMax.x
-           || currentPosition.x<boundingBoxMin.x
-           || currentPosition.y>boundingBoxMax.y
-           || currentPosition.y<boundingBoxMin.y
-           || currentPosition.z>boundingBoxMax.z
-           || currentPosition.z<boundingBoxMin.z) {
+	// we have a starting position and direction, take a step in that direction and store a new vertex position.
+	// to make line curve smoothly
+	// we have a target position we want to move towards, but we dont look there directly,
+	// instead we add little bit of target direction slowly each time so that we curve slowly towards target.
+	// when we are close enough to the target or at random chance we choose a new random target within bounding box.
+	glm::vec3 currentPos = glm::vec3(boundingBoxMin); // where we are
+	glm::vec3 targetPos = glm::vec3((boundingBoxMax+boundingBoxMin)/2.f); // where we want to go
+	glm::vec3 currentDirection = glm::vec3(0,1,0); // where we are looking
+	glm::vec3 targetDirection = glm::normalize(targetPos - currentPos); // where we want to look
+	float stepSize = 0.01f; // lower for finer line resolution (more vertices)
+	float curviness = 0.8f; // interpolation factor between current direction and target direction
+	float targetChangeProbability = 0.07f;
+	float minDistanceToTarget = 0.06f;
 
-            // outside bounding box, change direction and prevent new direction change until back in bounding box
-            if(!directionChangedBecauseOutOfBoundingBox) {  // direction not already changed because of bounding box
-                directionChangedBecauseOutOfBoundingBox = true;
-                // get random point in bounding box as new target
-                float rx = ((boundingBoxMax.x - boundingBoxMin.x) * ((float) rand() / RAND_MAX)) + boundingBoxMin.x;
-                float ry = ((boundingBoxMax.y - boundingBoxMin.y) * ((float) rand() / RAND_MAX)) + boundingBoxMin.y;
-                float rz = ((boundingBoxMax.z - boundingBoxMin.z) * ((float) rand() / RAND_MAX)) + boundingBoxMin.z;
+	for (int i = 0; i < numVertices; ++i) {
 
-                currentTargetPoint = glm::vec3(rx, ry, rz);
-            }
-        } else {
-            // back in bounding box, new direction change allowed
-            directionChangedBecauseOutOfBoundingBox = false;
+		// set a new random target if we are close enough to target or at random chance according to given probability
+		if (glm::length(targetPos - currentPos) < minDistanceToTarget || ((float)rand() / RAND_MAX) <= targetChangeProbability) {
+			float rx = ((boundingBoxMax.x - boundingBoxMin.x) * ((float)rand()/RAND_MAX)) + boundingBoxMin.x;
+			float ry = ((boundingBoxMax.y - boundingBoxMin.y) * ((float)rand()/RAND_MAX)) + boundingBoxMin.y;
+			float rz = ((boundingBoxMax.z - boundingBoxMin.z) * ((float)rand()/RAND_MAX)) + boundingBoxMin.z;
+			targetPos = glm::vec3(rx,ry,rz);
+		}
 
-            // change target point randomly or if to near to the target point
-            if(glm::length(currentPosition-currentTargetPoint)<minDistanceToTargetPoint  // this line incorrectly throws an error
-                    || ((float)rand()/RAND_MAX)<directionChangeProbability){
-                float rx = ((boundingBoxMax.x - boundingBoxMin.x) * ((float) rand() / RAND_MAX)) + boundingBoxMin.x;
-                float ry = ((boundingBoxMax.y - boundingBoxMin.y) * ((float) rand() / RAND_MAX)) + boundingBoxMin.y;
-                float rz = ((boundingBoxMax.z - boundingBoxMin.z) * ((float) rand() / RAND_MAX)) + boundingBoxMin.z;
+		// to make line curve smoothly add little bit of target direction slowly each time instead of looking directly at target
+		targetDirection = glm::normalize(targetPos - currentPos);
+		currentDirection = glm::normalize(curviness*currentDirection + (1-curviness)*targetDirection);
 
-                currentTargetPoint = glm::vec3(rx, ry, rz);
-            }
-        }
-        targetDirection = glm::normalize(currentTargetPoint - currentPosition);
-        // change the direction (approach target direction)
-        currentDirection = glm::normalize(curviness*currentDirection + (1-curviness)*targetDirection);
-        // update position
-        currentPosition += currentDirection*stepSize;
+		currentPos += currentDirection*stepSize;
 
-        line1.push_back(glm::vec3(currentPosition));
-    }
+		line1.push_back(glm::vec3(currentPos));
+	}
     // postprocess line data
     glm::vec3 directionToThePoint;
     glm::vec3 directionFromThePoint;
