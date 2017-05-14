@@ -13,6 +13,7 @@
 #include <QTimer>
 
 #include "camera.h"
+#include "linevertex.h"
 
 class MainWindow;
 
@@ -26,7 +27,7 @@ public:
 	GLWidget(QWidget *parent, MainWindow *mainWindow);
 	~GLWidget();
 
-	void initLineRenderMode(std::vector<std::vector<glm::vec3> > *lines, std::vector<std::vector<glm::vec3> > *linesDirections, std::vector<std::vector<glm::vec2> > *linesUV);
+	void initLineRenderMode(std::vector<std::vector<LineVertex> > *lines);
 
 	float lineHaloDepth;
 	float lineHaloWidth;
@@ -77,18 +78,18 @@ private:
 
 	Camera camera;
 
-	// CPU line geometry data
+	// CPU line vertex data
+	// each line vertex has 8 floats: 3 pos, 3 direction to next, 2 uv for triangle strip texturing
+	// NOTE: we store two sequential copies of each vertex (one with v = 0, one with v = 1) to draw lines as triangle strips
 	size_t nrLines;
-	std::vector<std::vector<glm::vec3> > *lines; // vector of lines (vector of vector of 3D points)
-	std::vector<std::vector<glm::vec3> > *linesDirections; // vector of line directions (every vertex has a direction)
-	std::vector<std::vector<glm::vec2> > *linesUV; // vector of line UVs
+	std::vector<std::vector<LineVertex> > *lines;
 
-	// GPU line geometry data and shaders
+	// GPU line vertex data and shaders
+	// each line vertex has 8 floats: 3 pos, 3 direction to next, 2 uv for triangle strip texturing
+	// NOTE: we store two sequential copies of each vertex (one with v = 0, one with v = 1) to draw lines as triangle strips
 	QOpenGLShaderProgram *simpleLineShader;
 	QOpenGLVertexArrayObject vaoLines; // a VAO remembers states of buffer objects, allowing to easily bind/unbind different buffer states for rendering different objects in a scene.
-	QOpenGLBuffer vboLines; // actual line data (array of 3D points)
-	QOpenGLBuffer vboLinesDirection; // direction of the line segment (at the vertex)
-	QOpenGLBuffer vboLinesUV; // direction of the line segment (at the vertex)
+	QOpenGLBuffer vboLines;
 
 	// GUI ELEMENTS
 

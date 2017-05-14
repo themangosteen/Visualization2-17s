@@ -36,6 +36,7 @@ set(SRC_CLASSES
     src/mainwindow.h
     src/glwidget.cpp
     src/glwidget.h
+    src/linevertex.h
     src/camera.cpp
     src/camera.h
 

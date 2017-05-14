@@ -9,6 +9,7 @@
 #include <QVariant>
 
 #include "glwidget.h"
+#include "linevertex.h"
 
 namespace Ui {
 class MainWindow;
@@ -45,9 +46,11 @@ protected slots:
     void renderModeChanged(int index);
     void contourWidthChanged(double value);
 
+	glm::vec3 randomPosInBoundingBox(glm::vec3 boundingBoxMin, glm::vec3 boundingBoxMax);
 	void generateTestData(int numVertices, glm::vec3 boundingBoxMin, glm::vec3 boundingBoxMax);
 
 private slots:
+
 	void on_generateTestDataButton_clicked();
 
 private:
@@ -68,9 +71,8 @@ private:
     } fileType;
 
     GLWidget *glWidget;
-    std::vector<std::vector<glm::vec3> > datasetLines;
-    std::vector<std::vector<glm::vec3> > datasetLinesDirections;
-    std::vector<std::vector<glm::vec2> > datasetLinesUV;
+	std::vector<std::vector<LineVertex> > datasetLines;
+
 };
 
 #endif // MAINWINDOW_H

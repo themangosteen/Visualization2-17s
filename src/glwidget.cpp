@@ -108,19 +108,16 @@ void GLWidget::initializeGL()
 }
 
 
-void GLWidget::initLineRenderMode(std::vector<std::vector<glm::vec3> > *lines, std::vector<std::vector<glm::vec3> > *linesDirections, std::vector<std::vector<glm::vec2> > *linesUV)
+void GLWidget::initLineRenderMode(std::vector<std::vector<LineVertex> > *lines)
 {
 	// makes the widget's rendering context the current OpenGL rendering context
 	makeCurrent();
 
 	this->lines = lines;
-	this->linesDirections = linesDirections;
-	this->linesUV = linesUV;
 	renderMode = RenderMode::LINES;
 
 	// allocate data
 	allocateGPUBufferLineData();
-
 }
 
 void GLWidget::allocateGPUBufferLineData()
@@ -129,65 +126,43 @@ void GLWidget::allocateGPUBufferLineData()
 	makeCurrent();
 
 	// load lines
+	// TODO: currently we just use one single line (one single array of vertices)
 	nrLines = lines->size();
 
-	// TODO create struct of line vertices
-	// each vertex should contain: glm::vec3 position, glm::vec2 texturecoords, glm::vec3 line direction
+	std::vector<LineVertex> line1 = (*lines)[0];
 
-	for (size_t i = 0; i < nrLines; ++i) {
-		std::vector<glm::vec3> line = (*lines)[i];
-	}
-
-	std::vector<glm::vec3> line1 = (*lines)[0];
-	std::vector<glm::vec3> line1Directions = (*linesDirections)[0];
-	std::vector<glm::vec2> line1UV = (*linesUV)[0];
-
-	qDebug() << "line number of vertices:" << line1.size();
+	//qDebug() << "line number of vertices (duplicated to draw as triangle strips):" << line1.size();
 
 	QOpenGLVertexArrayObject::Binder vaoBinder(&vaoLines); // destructor unbinds (i.e. when out of scope)
 	QOpenGLFunctions *f = QOpenGLContext::currentContext()->functions();
 
-	// POSITION
+	// ALLOCATE VERTEX DATA ON BUFFER
 	// allocate line vertex data to vertex buffer object
+	// each vertex has 8 floats: 3 pos, 3 direction to next, 2 uv for triangle strip texturing
+	// we store all three attributes interleaved on single vbo [<posdirectionuv><posdirectionuv>...]
+	// NOTE: we store two sequential copies of each vertex (one with v = 0, one with v = 1) to draw lines as triangle strips
 	vboLines.create();
 	vboLines.bind();
 	vboLines.setUsagePattern(QOpenGLBuffer::StaticDraw);
-	vboLines.allocate(&line1[0], line1.size() * sizeof(glm::vec3)); // just first line for now
+	vboLines.allocate(&line1[0], line1.size() * 8 * sizeof(GLfloat));
 
-	// bind vbo to shader attribute
+	// BIND VERTEX BUFFER TO SHADER ATTRIBUTES
 	simpleLineShader->bind();
-	int positionAttribShaderIndex = simpleLineShader->attributeLocation("position");
-	simpleLineShader->enableAttributeArray(positionAttribShaderIndex); // enable bound vertex buffer at this index
-	simpleLineShader->setAttributeBuffer(positionAttribShaderIndex, GL_FLOAT, 0, 3); // 3 components x,y,z
+
+	// important: offset is meant between shader attributes! not between data of individual vertices!
+	// for sequential vbo attribute storage [xyzxyzxyzxyzxyz...uvuvuvuvuvuvuv...] we just set offset to first position of uv
+	// however here for interleaved attribute storage [xyzxyzuv...xyzxyzuv...], i.e. sequential vertex data storage
+	// we must use the stride to indicate the size of the vertex data (here 8 floats) and attribute offset inside the stride
+	// attributeStartPos(vertexindex) = vertexindex*stride + offset
+	simpleLineShader->enableAttributeArray(0); // assume shader attribute "position" at index 0
+	simpleLineShader->setAttributeBuffer(0, GL_FLOAT, 0*sizeof(GLfloat), 3, 8 * sizeof(GL_FLOAT)); // attribute offset 0 byte, 3 floats xyz, vertex stride 8*4 byte
+	simpleLineShader->enableAttributeArray(1); // assume shader attribute "direction" at index 1
+	simpleLineShader->setAttributeBuffer(1, GL_FLOAT, 3*sizeof(GLfloat), 3, 8 * sizeof(GL_FLOAT)); // attribute offset 3*4 byte, 3 floats xyz, vertex stride 8*4 byte
+	simpleLineShader->enableAttributeArray(2); // assume shader attribute "uv" at index 2
+	simpleLineShader->setAttributeBuffer(2, GL_FLOAT, 6*sizeof(GLfloat), 2, 8 * sizeof(GL_FLOAT)); // attribute offset 6*4 byte, 2 floats uv, vertex stride 8*4 byte
+
+	// unbind buffer and shader program
 	vboLines.release();
-
-	// DIRECTION
-	// allocate line direction data to vertex buffer object
-	vboLinesDirection.create();
-	vboLinesDirection.bind();
-	vboLinesDirection.setUsagePattern(QOpenGLBuffer::StaticDraw);
-	vboLinesDirection.allocate(&line1Directions[0], line1Directions.size() * sizeof(glm::vec3)); // just first line for now
-
-	// bind vbo to shader attribute
-	int directionAttribShaderIndex = simpleLineShader->attributeLocation("direction");
-	simpleLineShader->enableAttributeArray(directionAttribShaderIndex); // enable bound vertex buffer at this index
-	simpleLineShader->setAttributeBuffer(directionAttribShaderIndex, GL_FLOAT, 0, 3); // 3 components x,y,z
-	vboLinesDirection.release();
-
-	// UV
-	// allocate line direction data to vertex buffer object
-	vboLinesUV.create();
-	vboLinesUV.bind();
-	vboLinesUV.setUsagePattern(QOpenGLBuffer::StaticDraw);
-	vboLinesUV.allocate(&line1UV[0], line1UV.size() * sizeof(glm::vec2)); // just first line for now
-
-	// bind vbo to shader attribute
-	int uvAttribShaderIndex = simpleLineShader->attributeLocation("uv");
-	simpleLineShader->enableAttributeArray(uvAttribShaderIndex); // enable bound vertex buffer at this index
-	simpleLineShader->setAttributeBuffer(uvAttribShaderIndex, GL_FLOAT, 0, 2); // 2 components u,v
-	vboLinesUV.release();
-
-	// unbind shader program
 	simpleLineShader->release();
 
 	// display memory usage
@@ -198,7 +173,7 @@ void GLWidget::allocateGPUBufferLineData()
 	// check OpenGL error
 	GLenum err;
 	while ((err = glGetError()) != GL_NO_ERROR) {
-		qDebug() << "!!!OpenGL error: " << err;
+		qDebug() << "OpenGL error: " << err;
 	}
 	//mainWindow->displayUsedGPUMemory(float(total_mem_kb - cur_avail_mem_kb) / 1024.0f); // TODO FIX SEGFAULT!!
 }
@@ -236,10 +211,8 @@ void GLWidget::drawLines()
 	simpleLineShader->bind();
 	QMatrix4x4 viewMat = QMatrix4x4(glm::value_ptr(camera.getViewMatrix())).transposed();
 	QMatrix4x4 projMat = QMatrix4x4(glm::value_ptr(camera.getProjectionMatrix())).transposed();
-	//QVector3D cameraPos = QVector3D(viewMat * QVector4D(m_camera.getPosition().x, m_camera.getPosition().y, m_camera.getPosition().z, 1));
 	glm::vec3 camPosGLM = camera.getPosition();
 	QVector3D camPos = QVector3D(camPosGLM.x,camPosGLM.y,camPosGLM.z);
-//	qDebug() << "CameraPos: "<<camPos;
 	QVector3D lightPos = QVector3D(0, 0, 100);
 	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("viewMat"), viewMat);
 	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("projMat"), projMat);
