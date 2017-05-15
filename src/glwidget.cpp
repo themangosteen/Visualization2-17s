@@ -22,6 +22,7 @@ GLWidget::GLWidget(QWidget *parent, MainWindow *mainWindow)
 	renderMode = RenderMode::NONE;
 	lineTriangleStripWidth = 0.03f;
 	lineWidthPercentageBlack = 0.3f;
+	lineWidthDepthCueingFactor = 1.0f;
 	lineHaloMaxDepth = 0.01f;
 	nrLines = 0;
 
@@ -60,7 +61,7 @@ void GLWidget::initializeGL()
 	QWidget::setFocusPolicy(Qt::FocusPolicy::ClickFocus);
 
 	initializeOpenGLFunctions();
-	glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
+	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_MULTISAMPLE);
 
@@ -220,18 +221,19 @@ void GLWidget::drawLines()
 	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("inverseProjMat"), projMat.inverted());
 	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("lightPos"), lightPos); // in view space
 	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("cameraPos"), camPos);
-	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("color"), 0.9f, 0.3f, 0.8f);
+	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("colorLine"), 0.9f, 0.3f, 0.8f);
+	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("colorHalo"), 1.0f, 1.0f, 1.0f);
 	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("lineTriangleStripWidth"), lineTriangleStripWidth);
 	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("lineWidthPercentageBlack"), lineWidthPercentageBlack);
+	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("lineWidthDepthCueingFactor"), lineWidthDepthCueingFactor);
 	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("lineHaloMaxDepth"), lineHaloMaxDepth);
 
 
 	// DRAW
 
 	glf->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	//glf->glEnable(GL_BLEND); glf->glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	glf->glDrawArrays(GL_TRIANGLE_STRIP, 0, (*lines)[0].size()); // TODO change to triangle strip
+	glf->glDrawArrays(GL_TRIANGLE_STRIP, 0, (*lines)[0].size());
 
 	simpleLineShader->release();
 }

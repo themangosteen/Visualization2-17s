@@ -30,7 +30,8 @@ public:
 	void initLineRenderMode(std::vector<std::vector<LineVertex> > *lines);
 
 	float lineTriangleStripWidth;
-	float lineWidthPercentageBlack; // percentage of whole triangle strip drawn black to represent line (rest is white halo)
+	float lineWidthPercentageBlack; // percentage of triangle strip drawn black to represent line (rest is white halo)
+	float lineWidthDepthCueingFactor; // how much the black line is drawn thinner with increasing depth
 	float lineHaloMaxDepth; // max depth displacement of halo
 
 	inline QImage getImage()

@@ -7,10 +7,12 @@ in vec2 vertUV; // u is in [0,1] interpolated along line length, v is in [0,1] i
 layout(location = 0) out vec4 outColor;
 
 // uniforms are not interpolated or passed on
-uniform vec3 color;
+uniform vec3 colorLine;
+uniform vec3 colorHalo;
 uniform float lineTriangleStripWidth;
-uniform float lineWidthPercentageBlack;
-uniform float lineHaloMaxDepth;
+uniform float lineWidthPercentageBlack; // percentage of triangle strip drawn black to represent line (rest is white halo)
+uniform float lineWidthDepthCueingFactor; // how much the black line is drawn thinner with increasing depth
+uniform float lineHaloMaxDepth; // maximum depth displacement for white halo fragments
 uniform mat4 inverseProjMat;
 
 float getLinearizedFragmentDepth()
@@ -22,7 +24,7 @@ float getLinearizedFragmentDepth()
     unprojectedNDC /= unprojectedNDC.w;
     float depth = -(unprojectedNDC.z / 2.0 + 0.5);
 
-    return depth;
+    return depth; // depth in [0,1] where 0 is near plane, 1 is flar plane
 }
 
 void main()
@@ -41,15 +43,15 @@ void main()
     //  v h      /         \
 
     float offset = 2*abs(vertUV.y - 0.5); // relative offset of fragment from centerline of strip (perpendicular to line direction)
-    float depth = getLinearizedFragmentDepth();
-    float offsetThreshold = lineWidthPercentageBlack;
+    float depth = getLinearizedFragmentDepth(); // depth in [0,1]
+    float offsetThreshold = lineWidthPercentageBlack * (1-depth*lineWidthDepthCueingFactor); // black percentage depends on depth
 
     if (offset < offsetThreshold) {
-        outColor = vec4(0,0,0,1); // assign black (to represent line)
+        outColor = vec4(colorLine,1); // assign black (to represent line)
         gl_FragDepth = depth; // depth unchanged, but we must assign gl_FragDepth for all cases if we assign it somewhere
     }
     else {
-        outColor = vec4(1,1,1,1); // assign white (for surrounding halo)
+        outColor = vec4(colorHalo,1); // assign white (for surrounding halo)
         gl_FragDepth = depth + offset*lineHaloMaxDepth; // displace depth with increasing offset
     }
 }
