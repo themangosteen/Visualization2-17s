@@ -20,8 +20,9 @@ GLWidget::GLWidget(QWidget *parent, MainWindow *mainWindow)
 	mainWindow = mainWindow;
 
 	renderMode = RenderMode::NONE;
-	lineHaloWidth = 0.03f;
-    lineWidthPercentage = 0.3f;
+	lineTriangleStripWidth = 0.03f;
+	lineWidthPercentageBlack = 0.3f;
+	lineHaloMaxDepth = 0.01f;
 	nrLines = 0;
 
 }
@@ -216,11 +217,14 @@ void GLWidget::drawLines()
 	QVector3D lightPos = QVector3D(0, 0, 100);
 	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("viewMat"), viewMat);
 	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("projMat"), projMat);
+	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("inverseProjMat"), projMat.inverted());
 	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("lightPos"), lightPos); // in view space
-	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("lineHaloWidth"), lineHaloWidth);
-	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("color"), 0.9f, 0.3f, 0.8f);
 	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("cameraPos"), camPos);
-	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("lineWidthPercentage"), lineWidthPercentage);
+	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("color"), 0.9f, 0.3f, 0.8f);
+	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("lineTriangleStripWidth"), lineTriangleStripWidth);
+	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("lineWidthPercentageBlack"), lineWidthPercentageBlack);
+	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("lineHaloMaxDepth"), lineHaloMaxDepth);
+
 
 	// DRAW
 

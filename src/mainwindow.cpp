@@ -199,7 +199,7 @@ void MainWindow::renderModeChanged(int index)
 }
 void MainWindow::contourWidthChanged(double value)
 {
-	glWidget->lineHaloWidth = value;
+	glWidget->lineTriangleStripWidth = value;
 	glWidget->update();
 }
 
@@ -244,5 +244,5 @@ void MainWindow::displayFPS(int fps)
 
 void MainWindow::on_generateTestDataButton_clicked()
 {
-	generateTestData(20000, glm::vec3(-1.f,-1.f,-1.f), glm::vec3(1.f,1.f,1.f));
+	generateTestData(100000, glm::vec3(-1.f,-1.f,-1.f), glm::vec3(1.f,1.f,1.f));
 }
