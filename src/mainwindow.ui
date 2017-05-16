@@ -83,6 +83,9 @@
          <property name="toolTip">
           <string>number of vertices to generate for test data</string>
          </property>
+         <property name="inputMethodHints">
+          <set>Qt::ImhDigitsOnly</set>
+         </property>
          <property name="suffix">
           <string> vertices</string>
          </property>
@@ -334,6 +337,19 @@
           </property>
           <property name="value">
            <double>0.300000000000000</double>
+          </property>
+         </widget>
+         <widget class="QPushButton" name="pushButtonRestoreDefaults">
+          <property name="geometry">
+           <rect>
+            <x>95</x>
+            <y>191</y>
+            <width>71</width>
+            <height>22</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Reset</string>
           </property>
          </widget>
         </widget>

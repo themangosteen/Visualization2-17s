@@ -30,7 +30,7 @@ GLWidget::GLWidget(QWidget *parent, MainWindow *mainWindow)
 	lineTriangleStripWidth = 0.03f;
 	lineWidthPercentageBlack = 0.3f;
 	lineWidthDepthCueingFactor = 1.0f;
-	lineHaloMaxDepth = 0.01f;
+	lineHaloMaxDepth = 0.02f;
 
 	nrLines = 0;
 
@@ -193,7 +193,7 @@ void GLWidget::allocateGPUBufferLineData()
 	// check OpenGL error
 	GLenum err;
 	while ((err = glGetError()) != GL_NO_ERROR) {
-		qDebug() << "OpenGL error: " << err;
+		qDebug() << "OpenGL error:" << err;
 	}
 
 	emit usedGPUMemoryChanged(float(total_mem_kb - cur_avail_mem_kb) / 1024.0f);

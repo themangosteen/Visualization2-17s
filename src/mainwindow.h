@@ -49,12 +49,10 @@ protected slots:
 	void on_spinBoxLineWidthPercentageBlack_valueChanged(double value);
 	void on_spinBoxLineWidthDepthCueingFactor_valueChanged(double value);
 	void on_spinBoxLineHaloMaxDepth_valueChanged(double value);
+	void on_pushButtonRestoreDefaults_clicked();
 
 	glm::vec3 randomPosInBoundingBox(glm::vec3 boundingBoxMin, glm::vec3 boundingBoxMax);
 	void generateTestData(int numVertices, glm::vec3 boundingBoxMin, glm::vec3 boundingBoxMax);
-
-private slots:
-
 
 private:
 

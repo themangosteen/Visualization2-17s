@@ -138,7 +138,7 @@ void MainWindow::generateTestData(int numVertices, glm::vec3 boundingBoxMin, glm
 
 	datasetLines.push_back(line1VerticesDoubled);
 
-	qDebug() << "Test line vertex data (pos, direction to next, uv for triangle strip drawing) generated:" << numVertices << "vertices";
+	qDebug() << "Test line data generated:" << numVertices << "line vertices," << line1VerticesDoubled.size() << "vertices after duplication for triangle strip drawing. Each vertex consists of 8 floats (3 pos, 3 direction to next, 2 uv for triangle strip drawing).";
 
 	glWidget->initLineRenderMode(&datasetLines);
 }
@@ -229,7 +229,9 @@ void MainWindow::displayGraphicsDeviceInfo(QString string)
 
 void MainWindow::on_generateTestDataButton_clicked()
 {
-	generateTestData(ui->testDataNumVerticesSpinBox->value(), glm::vec3(-1.f,-1.f,-1.f), glm::vec3(1.f,1.f,1.f));
+	// the value in the testDataNumVerticesSpinBox should represent the numer of total vertices of the triangle strips
+	// we need half of that for the line vertices test data, since line vertices will be duplicated for triangle strip generation
+	generateTestData(ui->testDataNumVerticesSpinBox->value()/2, glm::vec3(-1.f,-1.f,-1.f), glm::vec3(1.f,1.f,1.f));
 }
 
 void MainWindow::renderModeChanged(int index)
@@ -259,5 +261,15 @@ void MainWindow::on_spinBoxLineWidthDepthCueingFactor_valueChanged(double value)
 void MainWindow::on_spinBoxLineHaloMaxDepth_valueChanged(double value)
 {
 	glWidget->lineHaloMaxDepth = value;
+	glWidget->update();
+}
+
+void MainWindow::on_pushButtonRestoreDefaults_clicked()
+{
+	ui->spinBoxLineTriangleStripWidth->setValue(0.03f);
+	ui->spinBoxLineWidthPercentageBlack->setValue(0.3f);
+	ui->spinBoxLineWidthDepthCueingFactor->setValue(1.0f);
+	ui->spinBoxLineHaloMaxDepth->setValue(0.02f);
+
 	glWidget->update();
 }
