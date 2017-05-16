@@ -24,6 +24,7 @@ GLWidget::GLWidget(QWidget *parent, MainWindow *mainWindow)
 	lineWidthPercentageBlack = 0.3f;
 	lineWidthDepthCueingFactor = 1.0f;
 	lineHaloMaxDepth = 0.01f;
+
 	nrLines = 0;
 
 }
@@ -83,7 +84,9 @@ void GLWidget::initializeGL()
 	QString extensions = QString((const char*)glGetString(GL_EXTENSIONS));
 	QString vendor = QString((const char*)glGetString(GL_VENDOR));
 	QString renderer = QString((const char*)glGetString(GL_RENDERER));
-	qDebug() << "Graphics Device:" << renderer << "by" << vendor;
+	QString deviceInfoString = "Graphics Device:" + renderer + "by" + vendor;
+	qDebug() << deviceInfoString;
+	//mainWindow->displayGraphicsDeviceInfo(deviceInfoString); // TODO FIX SEGFAULT
 	if (vendor.contains("nvidia", Qt::CaseInsensitive) && extensions.contains("GL_NVX_gpu_memory_info", Qt::CaseInsensitive))
 		GL_NVX_gpu_memory_info_supported = true;
 	else {
@@ -221,7 +224,7 @@ void GLWidget::drawLines()
 	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("inverseProjMat"), projMat.inverted());
 	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("lightPos"), lightPos); // in view space
 	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("cameraPos"), camPos);
-	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("colorLine"), 0.9f, 0.3f, 0.8f);
+	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("colorLine"), 0.0f, 0.0f, 0.0f);
 	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("colorHalo"), 1.0f, 1.0f, 1.0f);
 	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("lineTriangleStripWidth"), lineTriangleStripWidth);
 	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("lineWidthPercentageBlack"), lineWidthPercentageBlack);

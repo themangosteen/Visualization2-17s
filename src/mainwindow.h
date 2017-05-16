@@ -26,6 +26,7 @@ public:
     void displayTotalGPUMemory(float size);
     void displayUsedGPUMemory(float size);
     void displayFPS(int fps);
+	void displayGraphicsDeviceInfo(QString string);
 
     inline GLWidget *getGLWidget()
     {
@@ -44,14 +45,17 @@ protected slots:
     void closeAction();
 
     void renderModeChanged(int index);
-    void contourWidthChanged(double value);
+	void on_generateTestDataButton_clicked();
+	void on_spinBoxLineTriangleStripWidth_valueChanged(double value);
+	void on_spinBoxLineWidthPercentageBlack_valueChanged(double value);
+	void on_spinBoxLineWidthDepthCueingFactor_valueChanged(double value);
+	void on_spinBoxLineHaloMaxDepth_valueChanged(double value);
 
 	glm::vec3 randomPosInBoundingBox(glm::vec3 boundingBoxMin, glm::vec3 boundingBoxMax);
 	void generateTestData(int numVertices, glm::vec3 boundingBoxMin, glm::vec3 boundingBoxMax);
 
 private slots:
 
-	void on_generateTestDataButton_clicked();
 
 private:
 

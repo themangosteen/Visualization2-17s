@@ -34,8 +34,6 @@ MainWindow::MainWindow(QWidget *parent) :
 	connect(ui->actionOpen, SIGNAL(triggered()), this, SLOT(openFileAction()));
 	connect(ui->actionClose, SIGNAL(triggered()), this, SLOT(closeAction()));
 
-	connect(ui->contourWidthSpinBox, SIGNAL(valueChanged(double)), this, SLOT(contourWidthChanged(double)));
-
 	ui->memSizeLCD->setPalette(Qt::darkBlue);
 	ui->usedMemLCD->setPalette(Qt::darkGreen);
 	ui->fpsLCD->setPalette(Qt::darkGreen);
@@ -187,23 +185,6 @@ void MainWindow::openFileAction()
 	}
 }
 
-void MainWindow::renderModeChanged(int index)
-{
-	if (index == 0) {
-		ui->contourWidthSpinBox->setEnabled(true);
-	}
-	else {
-		ui->contourWidthSpinBox->setEnabled(false);
-	}
-	glWidget->update();
-}
-void MainWindow::contourWidthChanged(double value)
-{
-	glWidget->lineTriangleStripWidth = value;
-	glWidget->update();
-}
-
-
 void MainWindow::closeAction()
 {
 	close();
@@ -242,7 +223,42 @@ void MainWindow::displayFPS(int fps)
 	ui->fpsLCD->display(fps);
 }
 
+void MainWindow::displayGraphicsDeviceInfo(QString string)
+{
+	ui->labelGraphicsDeviceInfo->setText(string);
+}
+
 void MainWindow::on_generateTestDataButton_clicked()
 {
-	generateTestData(100000, glm::vec3(-1.f,-1.f,-1.f), glm::vec3(1.f,1.f,1.f));
+	generateTestData(ui->testDataNumVerticesSpinBox->value(), glm::vec3(-1.f,-1.f,-1.f), glm::vec3(1.f,1.f,1.f));
+}
+
+void MainWindow::renderModeChanged(int index)
+{
+	glWidget->renderMode = (GLWidget::RenderMode)index;
+	glWidget->update();
+}
+
+void MainWindow::on_spinBoxLineTriangleStripWidth_valueChanged(double value)
+{
+	glWidget->lineTriangleStripWidth = value;
+	glWidget->update();
+}
+
+void MainWindow::on_spinBoxLineWidthPercentageBlack_valueChanged(double value)
+{
+	glWidget->lineWidthPercentageBlack = value;
+	glWidget->update();
+}
+
+void MainWindow::on_spinBoxLineWidthDepthCueingFactor_valueChanged(double value)
+{
+	glWidget->lineWidthDepthCueingFactor = value;
+	glWidget->update();
+}
+
+void MainWindow::on_spinBoxLineHaloMaxDepth_valueChanged(double value)
+{
+	glWidget->lineHaloMaxDepth = value;
+	glWidget->update();
 }

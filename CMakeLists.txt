@@ -44,8 +44,8 @@ set(SRC_CLASSES
 	
 # relative path to shader files
 set(SRC_SHADERS
-    src/shaders/simple_line_shader.vert
-    src/shaders/simple_line_shader.frag
+    src/shaders/shader_lines_with_halos.vert
+    src/shaders/shader_lines_with_halos.frag
 )
 
 QT5_WRAP_UI(UI_HEADERS
