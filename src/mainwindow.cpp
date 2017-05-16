@@ -24,7 +24,6 @@ MainWindow::MainWindow(QWidget *parent) :
 	auto format = QSurfaceFormat();
 	format.setSamples(16);
 	format.setVersion(3, 3);
-	format.setProfile(QSurfaceFormat::CoreProfile);
 	QSurfaceFormat::setDefaultFormat(format);
 
 	glWidget = new GLWidget(this, this);

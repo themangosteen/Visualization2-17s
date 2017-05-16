@@ -19,6 +19,13 @@ GLWidget::GLWidget(QWidget *parent, MainWindow *mainWindow)
 {
 	mainWindow = mainWindow;
 
+	// since Qt puts MainWindow and its UI in another thread than GLWidget
+	// we must use signal/slots to communicate instead of accessing MainWindow functions directly
+	connect(this, &GLWidget::totalGPUMemoryChanged, mainWindow, &MainWindow::displayTotalGPUMemory);
+	connect(this, &GLWidget::usedGPUMemoryChanged, mainWindow, &MainWindow::displayUsedGPUMemory);
+	connect(this, &GLWidget::fpsChanged, mainWindow, &MainWindow::displayFPS);
+	connect(this, &GLWidget::graphicsDeviceInfoChanged, mainWindow, &MainWindow::displayGraphicsDeviceInfo);
+
 	renderMode = RenderMode::NONE;
 	lineTriangleStripWidth = 0.03f;
 	lineWidthPercentageBlack = 0.3f;
@@ -37,10 +44,10 @@ GLWidget::~GLWidget()
 void GLWidget::initShaders()
 {
 	QString buildDir = QCoreApplication::applicationDirPath();
-	simpleLineShader = new QOpenGLShaderProgram(QOpenGLContext::currentContext());
-	simpleLineShader->addShaderFromSourceFile(QOpenGLShader::Vertex, buildDir + "/shaders/simple_line_shader.vert");
-	simpleLineShader->addShaderFromSourceFile(QOpenGLShader::Fragment, buildDir + "/shaders/simple_line_shader.frag");
-	simpleLineShader->link();
+	shaderLinesWithHalos = new QOpenGLShaderProgram(QOpenGLContext::currentContext());
+	shaderLinesWithHalos->addShaderFromSourceFile(QOpenGLShader::Vertex, buildDir + "/shaders/shader_lines_with_halos.vert");
+	shaderLinesWithHalos->addShaderFromSourceFile(QOpenGLShader::Fragment, buildDir + "/shaders/shader_lines_with_halos.frag");
+	shaderLinesWithHalos->link();
 
 }
 
@@ -50,7 +57,7 @@ void GLWidget::cleanup()
 	makeCurrent();
 
 	vaoLines.destroy();
-	simpleLineShader = nullptr;
+	shaderLinesWithHalos = nullptr;
 
 	doneCurrent();
 }
@@ -62,6 +69,7 @@ void GLWidget::initializeGL()
 	QWidget::setFocusPolicy(Qt::FocusPolicy::ClickFocus);
 
 	initializeOpenGLFunctions();
+
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_MULTISAMPLE);
@@ -78,20 +86,25 @@ void GLWidget::initializeGL()
 
 	initShaders();
 
+	// get graphics device and opengl info
+	QString extensions = QString((const char*)glGetString(GL_EXTENSIONS));
+	QString glversion = QString((const char*)glGetString(GL_VERSION));
+	QString vendor = QString((const char*)glGetString(GL_VENDOR));
+	QString renderer = QString((const char*)glGetString(GL_RENDERER));
+
 	// GL_NVX_gpu_memory_info is an extension by NVIDIA
 	// that provides applications visibility into GPU
 	// hardware memory utilization
-	QString extensions = QString((const char*)glGetString(GL_EXTENSIONS));
-	QString vendor = QString((const char*)glGetString(GL_VENDOR));
-	QString renderer = QString((const char*)glGetString(GL_RENDERER));
-	QString deviceInfoString = "Graphics Device:" + renderer + "by" + vendor;
-	qDebug() << deviceInfoString;
-	//mainWindow->displayGraphicsDeviceInfo(deviceInfoString); // TODO FIX SEGFAULT
 	if (vendor.contains("nvidia", Qt::CaseInsensitive) && extensions.contains("GL_NVX_gpu_memory_info", Qt::CaseInsensitive))
 		GL_NVX_gpu_memory_info_supported = true;
 	else {
 		qDebug() << "OpenGL extension GL_NVX_gpu_memory_info not supported (requires NVIDIA gpu)";
 	}
+
+	QString deviceInfoString = "Graphics Device:\n" + renderer + "\nby " + vendor + "\n\nOpenGL version: " + glversion + (GL_NVX_gpu_memory_info_supported ? "" : "\n\n[!] GL_NVX_gpu_memory_info not supported (needs NVIDIA)");
+	qDebug().noquote() << deviceInfoString;
+	emit graphicsDeviceInfoChanged(deviceInfoString);
+
 	GLint total_mem_kb = 0;
 	GLint cur_avail_mem_kb = 0;
 	if (GL_NVX_gpu_memory_info_supported) {
@@ -101,14 +114,16 @@ void GLWidget::initializeGL()
 
 	float cur_avail_mem_mb = float(cur_avail_mem_kb) / 1024.0f;
 	float total_mem_mb = float(total_mem_kb) / 1024.0f;
-	//mainWindow->displayTotalGPUMemory(total_mem_mb); // TODO FIX SEGFAULT
-	//mainWindow->displayUsedGPUMemory(0); // TODO FIX SEGFAULT
+	emit totalGPUMemoryChanged(total_mem_mb);
+	emit usedGPUMemoryChanged(0);
 
 	// start scene update and paint timer
 	connect(&paintTimer, SIGNAL(timeout()), this, SLOT(update()));
 	paintTimer.start(16); // draw one frame each interval of 0.016 seconds, 1/0.016 yields about 60 fps
 	previousTimeFPS = 0;
 	fpsTimer.start();
+
+	qDebug() << ""; // newline
 
 }
 
@@ -152,23 +167,23 @@ void GLWidget::allocateGPUBufferLineData()
 	vboLines.allocate(&line1[0], line1.size() * 8 * sizeof(GLfloat));
 
 	// BIND VERTEX BUFFER TO SHADER ATTRIBUTES
-	simpleLineShader->bind();
+	shaderLinesWithHalos->bind();
 
 	// important: offset is meant between shader attributes! not between data of individual vertices!
 	// for sequential vbo attribute storage [xyzxyzxyzxyzxyz...uvuvuvuvuvuvuv...] we just set offset to first position of uv
 	// however here for interleaved attribute storage [xyzxyzuv...xyzxyzuv...], i.e. sequential vertex data storage
 	// we must use the stride to indicate the size of the vertex data (here 8 floats) and attribute offset inside the stride
 	// attributeStartPos(vertexindex) = vertexindex*stride + offset
-	simpleLineShader->enableAttributeArray(0); // assume shader attribute "position" at index 0
-	simpleLineShader->setAttributeBuffer(0, GL_FLOAT, 0*sizeof(GLfloat), 3, 8 * sizeof(GL_FLOAT)); // attribute offset 0 byte, 3 floats xyz, vertex stride 8*4 byte
-	simpleLineShader->enableAttributeArray(1); // assume shader attribute "direction" at index 1
-	simpleLineShader->setAttributeBuffer(1, GL_FLOAT, 3*sizeof(GLfloat), 3, 8 * sizeof(GL_FLOAT)); // attribute offset 3*4 byte, 3 floats xyz, vertex stride 8*4 byte
-	simpleLineShader->enableAttributeArray(2); // assume shader attribute "uv" at index 2
-	simpleLineShader->setAttributeBuffer(2, GL_FLOAT, 6*sizeof(GLfloat), 2, 8 * sizeof(GL_FLOAT)); // attribute offset 6*4 byte, 2 floats uv, vertex stride 8*4 byte
+	shaderLinesWithHalos->enableAttributeArray(0); // assume shader attribute "position" at index 0
+	shaderLinesWithHalos->setAttributeBuffer(0, GL_FLOAT, 0*sizeof(GLfloat), 3, 8 * sizeof(GL_FLOAT)); // attribute offset 0 byte, 3 floats xyz, vertex stride 8*4 byte
+	shaderLinesWithHalos->enableAttributeArray(1); // assume shader attribute "direction" at index 1
+	shaderLinesWithHalos->setAttributeBuffer(1, GL_FLOAT, 3*sizeof(GLfloat), 3, 8 * sizeof(GL_FLOAT)); // attribute offset 3*4 byte, 3 floats xyz, vertex stride 8*4 byte
+	shaderLinesWithHalos->enableAttributeArray(2); // assume shader attribute "uv" at index 2
+	shaderLinesWithHalos->setAttributeBuffer(2, GL_FLOAT, 6*sizeof(GLfloat), 2, 8 * sizeof(GL_FLOAT)); // attribute offset 6*4 byte, 2 floats uv, vertex stride 8*4 byte
 
 	// unbind buffer and shader program
 	vboLines.release();
-	simpleLineShader->release();
+	shaderLinesWithHalos->release();
 
 	// display memory usage
 	if (GL_NVX_gpu_memory_info_supported) {
@@ -180,7 +195,8 @@ void GLWidget::allocateGPUBufferLineData()
 	while ((err = glGetError()) != GL_NO_ERROR) {
 		qDebug() << "OpenGL error: " << err;
 	}
-	//mainWindow->displayUsedGPUMemory(float(total_mem_kb - cur_avail_mem_kb) / 1024.0f); // TODO FIX SEGFAULT!!
+
+	emit usedGPUMemoryChanged(float(total_mem_kb - cur_avail_mem_kb) / 1024.0f);
 }
 
 void GLWidget::paintGL()
@@ -213,23 +229,23 @@ void GLWidget::drawLines()
 
 	// bind shader program and set shader uniforms
 	// note that glm uses column vectors, qt uses row vectors, thus transpose
-	simpleLineShader->bind();
+	shaderLinesWithHalos->bind();
 	QMatrix4x4 viewMat = QMatrix4x4(glm::value_ptr(camera.getViewMatrix())).transposed();
 	QMatrix4x4 projMat = QMatrix4x4(glm::value_ptr(camera.getProjectionMatrix())).transposed();
 	glm::vec3 camPosGLM = camera.getPosition();
 	QVector3D camPos = QVector3D(camPosGLM.x,camPosGLM.y,camPosGLM.z);
 	QVector3D lightPos = QVector3D(0, 0, 100);
-	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("viewMat"), viewMat);
-	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("projMat"), projMat);
-	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("inverseProjMat"), projMat.inverted());
-	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("lightPos"), lightPos); // in view space
-	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("cameraPos"), camPos);
-	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("colorLine"), 0.0f, 0.0f, 0.0f);
-	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("colorHalo"), 1.0f, 1.0f, 1.0f);
-	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("lineTriangleStripWidth"), lineTriangleStripWidth);
-	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("lineWidthPercentageBlack"), lineWidthPercentageBlack);
-	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("lineWidthDepthCueingFactor"), lineWidthDepthCueingFactor);
-	simpleLineShader->setUniformValue(simpleLineShader->uniformLocation("lineHaloMaxDepth"), lineHaloMaxDepth);
+	shaderLinesWithHalos->setUniformValue(shaderLinesWithHalos->uniformLocation("viewMat"), viewMat);
+	shaderLinesWithHalos->setUniformValue(shaderLinesWithHalos->uniformLocation("projMat"), projMat);
+	shaderLinesWithHalos->setUniformValue(shaderLinesWithHalos->uniformLocation("inverseProjMat"), projMat.inverted());
+	shaderLinesWithHalos->setUniformValue(shaderLinesWithHalos->uniformLocation("lightPos"), lightPos); // in view space
+	shaderLinesWithHalos->setUniformValue(shaderLinesWithHalos->uniformLocation("cameraPos"), camPos);
+	shaderLinesWithHalos->setUniformValue(shaderLinesWithHalos->uniformLocation("colorLine"), 0.0f, 0.0f, 0.0f);
+	shaderLinesWithHalos->setUniformValue(shaderLinesWithHalos->uniformLocation("colorHalo"), 1.0f, 1.0f, 1.0f);
+	shaderLinesWithHalos->setUniformValue(shaderLinesWithHalos->uniformLocation("lineTriangleStripWidth"), lineTriangleStripWidth);
+	shaderLinesWithHalos->setUniformValue(shaderLinesWithHalos->uniformLocation("lineWidthPercentageBlack"), lineWidthPercentageBlack);
+	shaderLinesWithHalos->setUniformValue(shaderLinesWithHalos->uniformLocation("lineWidthDepthCueingFactor"), lineWidthDepthCueingFactor);
+	shaderLinesWithHalos->setUniformValue(shaderLinesWithHalos->uniformLocation("lineHaloMaxDepth"), lineHaloMaxDepth);
 
 
 	// DRAW
@@ -238,7 +254,7 @@ void GLWidget::drawLines()
 
 	glf->glDrawArrays(GL_TRIANGLE_STRIP, 0, (*lines)[0].size());
 
-	simpleLineShader->release();
+	shaderLinesWithHalos->release();
 }
 
 void GLWidget::calculateFPS()
@@ -259,7 +275,7 @@ void GLWidget::calculateFPS()
 		frameCount = 0;
 	}
 
-	//mainWindow->displayFPS(fps);
+	emit fpsChanged(fps);
 
 }
 

@@ -51,6 +51,10 @@ public slots:
 	void cleanup();
 
 signals:
+	void usedGPUMemoryChanged(float size);
+	void totalGPUMemoryChanged(float size);
+	void fpsChanged(int fps);
+	void graphicsDeviceInfoChanged(QString string);
 
 protected:
 
@@ -89,7 +93,7 @@ private:
 	// GPU line vertex data and shaders
 	// each line vertex has 8 floats: 3 pos, 3 direction to next, 2 uv for triangle strip texturing
 	// NOTE: we store two sequential copies of each vertex (one with v = 0, one with v = 1) to draw lines as triangle strips
-	QOpenGLShaderProgram *simpleLineShader;
+	QOpenGLShaderProgram *shaderLinesWithHalos;
 	QOpenGLVertexArrayObject vaoLines; // a VAO remembers states of buffer objects, allowing to easily bind/unbind different buffer states for rendering different objects in a scene.
 	QOpenGLBuffer vboLines;
 

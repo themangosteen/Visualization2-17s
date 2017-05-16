@@ -23,11 +23,6 @@ public:
 	explicit MainWindow(QWidget *parent = 0);
 	~MainWindow();
 
-    void displayTotalGPUMemory(float size);
-    void displayUsedGPUMemory(float size);
-    void displayFPS(int fps);
-	void displayGraphicsDeviceInfo(QString string);
-
     inline GLWidget *getGLWidget()
     {
         return glWidget;
@@ -38,6 +33,10 @@ signals:
 
 public slots:
 
+	void displayTotalGPUMemory(float size);
+	void displayUsedGPUMemory(float size);
+	void displayFPS(int fps);
+	void displayGraphicsDeviceInfo(QString string);
 
 protected slots:
 
