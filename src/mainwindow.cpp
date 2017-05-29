@@ -44,7 +44,9 @@ MainWindow::~MainWindow()
 	delete ui;
 }
 
-// generate a random position within axis-aligned bounding box
+//! \brief generate a random position within an axis-aligned bounding box
+//! \param boundingBoxMin position defining start of axis aligned bounding box
+//! \param boundingBoxMax position defining end of axis aligned bounding box
 glm::vec3 MainWindow::randomPosInBoundingBox(glm::vec3 boundingBoxMin, glm::vec3 boundingBoxMax)
 {
 	float rx = ((boundingBoxMax.x - boundingBoxMin.x) * ((float) rand() / RAND_MAX)) + boundingBoxMin.x;
@@ -54,9 +56,13 @@ glm::vec3 MainWindow::randomPosInBoundingBox(glm::vec3 boundingBoxMin, glm::vec3
 	return glm::vec3(rx, ry, rz);
 }
 
-// generate vertices (8 float: 3 position, 3 direction to next vertex, 2 uv) along smooth lines within given bounding box
-// two copies of all vertices are stored in sequential manner,
-// with uv v-coordinate 0 and 1 to use for drawing as triangle strips (two strip vertices for each line vertex)
+//! \brief generate vertices along smooth lines within given bounding box
+//! \param numVertices this is only half the number of vertices generated: two copies of each vertex are stored in sequential manner to be able to render triangle strips later
+//! \param boundingBoxMin position defining start of axis aligned bounding box
+//! \param boundingBoxMax position defining end of axis aligned bounding box
+//! each vertex consists of 8 floats: 3 position, 3 direction to next vertex, 2 uv
+//! NOTE: two copies of all vertices are stored in sequential manner,
+//! with uv v-coordinate 0 and 1 to use for drawing as triangle strips (two strip vertices for each line vertex)
 void MainWindow::generateTestData(int numVertices, glm::vec3 boundingBoxMin, glm::vec3 boundingBoxMax)
 {
 	srand(time(NULL)); // change pseudorandom number generator seed

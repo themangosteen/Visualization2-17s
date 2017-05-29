@@ -5,10 +5,10 @@
 #define M_PI 3.14159265358979323846
 
 
-//! Camera class
+//! Camera class.
 
-//! Camera class supporting perspective and orthographic projection
-//! Mouse interaction allows to rotate around target
+//! Camera class supporting perspective and orthographic projection.
+//! Mouse interaction allows to rotate horizontally around target.
 class Camera
 {
 public:
