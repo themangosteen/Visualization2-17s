@@ -273,3 +273,18 @@ void MainWindow::on_pushButtonRestoreDefaults_clicked()
 
 	glWidget->update();
 }
+
+void MainWindow::on_checkBoxEnableClipping_clicked(bool checked)
+{
+	glWidget->enableClipping = checked;
+}
+
+void MainWindow::on_pushButtonSetClipPlaneNormal_clicked()
+{
+	glWidget->updateClipPlaneNormal();
+}
+
+void MainWindow::on_horizontalSliderClipPlaneDistance_valueChanged(int value)
+{
+	glWidget->clipPlaneDistance = (float)value/50.0f - 1.0f; // map [0,100] to [-1,1]
+}

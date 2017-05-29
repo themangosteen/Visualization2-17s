@@ -31,6 +31,9 @@ GLWidget::GLWidget(QWidget *parent, MainWindow *mainWindow)
 	lineWidthPercentageBlack = 0.3f;
 	lineWidthDepthCueingFactor = 1.0f;
 	lineHaloMaxDepth = 0.02f;
+	enableClipping = false;
+	updateClipPlaneNormal();
+	clipPlaneDistance = 0;
 
 	nrLines = 0;
 
@@ -246,6 +249,11 @@ void GLWidget::drawLines()
 	shaderLinesWithHalos->setUniformValue(shaderLinesWithHalos->uniformLocation("lineWidthPercentageBlack"), lineWidthPercentageBlack);
 	shaderLinesWithHalos->setUniformValue(shaderLinesWithHalos->uniformLocation("lineWidthDepthCueingFactor"), lineWidthDepthCueingFactor);
 	shaderLinesWithHalos->setUniformValue(shaderLinesWithHalos->uniformLocation("lineHaloMaxDepth"), lineHaloMaxDepth);
+	QVector3D clipPlaneN = QVector3D(clipPlaneNormal.x, clipPlaneNormal.y, clipPlaneNormal.z);
+	if (!enableClipping)
+		clipPlaneN = QVector3D(0,0,0);
+	shaderLinesWithHalos->setUniformValue(shaderLinesWithHalos->uniformLocation("clipPlaneNormal"), clipPlaneN);
+	shaderLinesWithHalos->setUniformValue(shaderLinesWithHalos->uniformLocation("clipPlaneDistance"), clipPlaneDistance);
 
 
 	// DRAW

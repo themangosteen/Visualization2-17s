@@ -172,7 +172,7 @@
           <property name="geometry">
            <rect>
             <x>15</x>
-            <y>41</y>
+            <y>42</y>
             <width>60</width>
             <height>20</height>
            </rect>
@@ -216,7 +216,7 @@
           <property name="geometry">
            <rect>
             <x>15</x>
-            <y>70</y>
+            <y>71</y>
             <width>60</width>
             <height>20</height>
            </rect>
@@ -229,7 +229,7 @@
           <property name="geometry">
            <rect>
             <x>95</x>
-            <y>129</y>
+            <y>125</y>
             <width>71</width>
             <height>22</height>
            </rect>
@@ -251,7 +251,7 @@
           <property name="geometry">
            <rect>
             <x>15</x>
-            <y>100</y>
+            <y>99</y>
             <width>71</width>
             <height>20</height>
            </rect>
@@ -264,7 +264,7 @@
           <property name="geometry">
            <rect>
             <x>95</x>
-            <y>159</y>
+            <y>153</y>
             <width>71</width>
             <height>22</height>
            </rect>
@@ -292,7 +292,7 @@
           <property name="geometry">
            <rect>
             <x>15</x>
-            <y>160</y>
+            <y>155</y>
             <width>81</width>
             <height>20</height>
            </rect>
@@ -305,7 +305,7 @@
           <property name="geometry">
            <rect>
             <x>15</x>
-            <y>130</y>
+            <y>127</y>
             <width>91</width>
             <height>20</height>
            </rect>
@@ -318,7 +318,7 @@
           <property name="geometry">
            <rect>
             <x>95</x>
-            <y>99</y>
+            <y>97</y>
             <width>71</width>
             <height>22</height>
            </rect>
@@ -343,13 +343,76 @@
           <property name="geometry">
            <rect>
             <x>95</x>
-            <y>191</y>
+            <y>181</y>
             <width>71</width>
             <height>22</height>
            </rect>
           </property>
           <property name="text">
            <string>Reset</string>
+          </property>
+         </widget>
+         <widget class="QCheckBox" name="checkBoxEnableClipping">
+          <property name="geometry">
+           <rect>
+            <x>15</x>
+            <y>224</y>
+            <width>130</width>
+            <height>26</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Enable Clipping</string>
+          </property>
+         </widget>
+         <widget class="QSlider" name="horizontalSliderClipPlaneDistance">
+          <property name="geometry">
+           <rect>
+            <x>15</x>
+            <y>277</y>
+            <width>151</width>
+            <height>30</height>
+           </rect>
+          </property>
+          <property name="minimum">
+           <number>0</number>
+          </property>
+          <property name="maximum">
+           <number>100</number>
+          </property>
+          <property name="value">
+           <number>50</number>
+          </property>
+          <property name="tracking">
+           <bool>true</bool>
+          </property>
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="invertedAppearance">
+           <bool>false</bool>
+          </property>
+          <property name="invertedControls">
+           <bool>false</bool>
+          </property>
+          <property name="tickPosition">
+           <enum>QSlider::NoTicks</enum>
+          </property>
+          <property name="tickInterval">
+           <number>0</number>
+          </property>
+         </widget>
+         <widget class="QPushButton" name="pushButtonSetClipPlaneNormal">
+          <property name="geometry">
+           <rect>
+            <x>15</x>
+            <y>255</y>
+            <width>151</width>
+            <height>22</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Update Clip Direction</string>
           </property>
          </widget>
         </widget>

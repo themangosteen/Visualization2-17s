@@ -15,6 +15,9 @@ namespace Ui {
 class MainWindow;
 }
 
+//! \brief The MainWindow class
+//! Class related to the MainWindow Qt User Interface
+//! Contains a GLWidget for OpenGL Drawing
 class MainWindow : public QMainWindow
 {
 	Q_OBJECT
@@ -50,6 +53,10 @@ protected slots:
 	void on_spinBoxLineWidthDepthCueingFactor_valueChanged(double value);
 	void on_spinBoxLineHaloMaxDepth_valueChanged(double value);
 	void on_pushButtonRestoreDefaults_clicked();
+
+	void on_checkBoxEnableClipping_clicked(bool checked);
+	void on_pushButtonSetClipPlaneNormal_clicked();
+	void on_horizontalSliderClipPlaneDistance_valueChanged(int value);
 
 	glm::vec3 randomPosInBoundingBox(glm::vec3 boundingBoxMin, glm::vec3 boundingBoxMax);
 	void generateTestData(int numVertices, glm::vec3 boundingBoxMin, glm::vec3 boundingBoxMax);

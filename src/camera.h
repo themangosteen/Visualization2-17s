@@ -4,6 +4,11 @@
 
 #define M_PI 3.14159265358979323846
 
+
+//! Camera class
+
+//! Camera class supporting perspective and orthographic projection
+//! Mouse interaction allows to rotate around target
 class Camera
 {
 public:
@@ -47,6 +52,8 @@ public:
 	void setOrthogonalBorders(float left, float right, float top, float bottom);
 
 	glm::vec3 getUp() { return mUp; };
+
+	glm::vec3 getRight() { return glm::inverse(mViewMatrix)[0]; };
 
 	glm::vec3 getTarget() { return mTarget; };
 
