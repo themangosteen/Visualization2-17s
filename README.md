@@ -24,6 +24,12 @@ An example dataset of the human connectome is included. Moreover, the framework 
 Is going to be uploaded to Youtube under the title
 ["SpaghettiVis - An implementation of Everts et al. dense line data visualization"](https://www.youtube.com/results?search_query=SpaghettiVis+An+implementation+of+Everts+et+al.+dense+line+data+visualization).
 
+## How to run the program
+cd build
+cmake ..
+make
+./vis2
+
 ## Thanks to
     * Everts et al. [1] for the great visualization algorithm
     * the organizers of the [**Visualization 2**](https://www.cg.tuwien.ac.at/courses/Visualisierung2/) course at TU Wien
