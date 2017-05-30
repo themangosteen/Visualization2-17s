@@ -191,7 +191,6 @@ bool MainWindow::loadTRKData(QString &filename) {
 	meanPosition = meanPosition/((float)(sumOfAllPoints*0.00001));
 	minCoordinates -= meanPosition;
 	maxCoordinates -= meanPosition;
-//	qDebug() << "Mean:" << meanPosition.x << "," << meanPosition.y << "," << meanPosition.z;
 
 	// https://wikimedia.org/api/rest_v1/media/math/render/svg/ad23419556331501d554ed0685b13a526d99d446
 	double diffX = maxCoordinates.x-minCoordinates.x;
@@ -217,13 +216,13 @@ bool MainWindow::loadTRKData(QString &filename) {
 			trkFileReader.readPoint(trackIndex, pointIndex, point);
             glm::vec3 pos = glm::vec3(point[0], point[2], point[1]);// swap y and z (we use different coords)
 
-            if(pointIndex % 1000==0){qDebug() << "Before:" << pos.x << "," << pos.y << "," << pos.z;}
+//            if(pointIndex % 4000==0){qDebug() << "Before:" << pos.x << "," << pos.y << "," << pos.z;}
 
 
             // move to center of coordinate system
             pos -= meanPosition;
 			pos = (pos-minValue)*zoomFactor+glm::vec3(-1); // see formula from wikimedia
-			if(pointIndex % 1000==0){qDebug() << "After:" << pos.x << "," << pos.y << "," << pos.z;}
+//			if(pointIndex % 4000==0){qDebug() << "After:" << pos.x << "," << pos.y << "," << pos.z;}
 
 
             line1Positions.push_back(pos);
@@ -234,10 +233,17 @@ bool MainWindow::loadTRKData(QString &filename) {
 	trkFileReader.close();
 
 	// adjust draw parameters for this dataset
-	ui->spinBoxLineTriangleStripWidth->setValue(0.001f);
-	ui->spinBoxLineWidthPercentageBlack->setValue(0.4f);
+	ui->spinBoxLineTriangleStripWidth->setValue(0.011f);
+	ui->spinBoxLineWidthPercentageBlack->setValue(0.5f);
 	ui->spinBoxLineWidthDepthCueingFactor->setValue(1.0f);
 	ui->spinBoxLineHaloMaxDepth->setValue(0.1f);
+
+	if(200000<sumOfAllPoints){ // big dataset needs other parameters
+		ui->spinBoxLineTriangleStripWidth->setValue(0.001f);
+		ui->spinBoxLineWidthPercentageBlack->setValue(0.4f);
+		ui->spinBoxLineWidthDepthCueingFactor->setValue(1.0f);
+		ui->spinBoxLineHaloMaxDepth->setValue(0.1f);
+	}
 
 	generateAdditionalLineVertexData(line1Positions);
 
