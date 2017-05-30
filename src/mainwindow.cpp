@@ -163,17 +163,71 @@ bool MainWindow::loadTRKData(QString &filename) {
 	if (!trkFileReader.open())
 		return false;
 
+    // first calculate measures
+    int numTracks = trkFileReader.getTotalTrkNum();  // number of tracks in input file
+    glm::vec3 meanPosition = glm::vec3(0,0,0);
+    glm::vec3 minCoordinates = glm::vec3(10000000,1000000,1000000);
+    glm::vec3 maxCoordinates = glm::vec3(-10000000,-1000000,-1000000);
+	int sumOfAllPoints = 0;
+    for (int trackIndex = 0; trackIndex < numTracks; ++trackIndex) {
+		glm::vec3 meanPositionInTrack = glm::vec3(0,0,0);
+
+        int numPointsInTrack = trkFileReader.getPointNumInTrk(trackIndex); // number of points in current track
+		sumOfAllPoints += numPointsInTrack;
+        for (int pointIndex = 0; pointIndex < numPointsInTrack; ++pointIndex) {
+            std::vector<float> point;
+            trkFileReader.readPoint(trackIndex, pointIndex, point);
+			meanPositionInTrack += glm::vec3(point[0], point[2], point[1])/((float)numPointsInTrack); // swap y and z (we use different coords)
+            if(maxCoordinates.x<point[0]){maxCoordinates.x=point[0];}
+            if(minCoordinates.x>point[0]){minCoordinates.x=point[0];}
+            if(maxCoordinates.y<point[2]){maxCoordinates.y=point[2];}
+            if(minCoordinates.y>point[2]){minCoordinates.y=point[2];}
+            if(maxCoordinates.z<point[1]){maxCoordinates.z=point[1];}
+            if(minCoordinates.z>point[1]){minCoordinates.z=point[1];}
+        }
+
+		meanPosition += ((float)numPointsInTrack)*meanPositionInTrack*0.00001f;
+    }
+	meanPosition = meanPosition/((float)(sumOfAllPoints*0.00001));
+	minCoordinates -= meanPosition;
+	maxCoordinates -= meanPosition;
+//	qDebug() << "Mean:" << meanPosition.x << "," << meanPosition.y << "," << meanPosition.z;
+
+	// https://wikimedia.org/api/rest_v1/media/math/render/svg/ad23419556331501d554ed0685b13a526d99d446
+	double diffX = maxCoordinates.x-minCoordinates.x;
+	double diffY = maxCoordinates.y-minCoordinates.y;
+	double diffZ = maxCoordinates.z-minCoordinates.z;
+	double maxDiff = glm::max(diffX,glm::max(diffY,diffZ));
+	float minValue = 0;
+	float maxValue = 0;
+	if(maxDiff==diffX){minValue=minCoordinates.x;maxValue=maxCoordinates.x;}
+	if(maxDiff==diffY){minValue=minCoordinates.y;maxValue=maxCoordinates.y;}
+	if(maxDiff==diffZ){minValue=minCoordinates.z;maxValue=maxCoordinates.z;}
+	float zoomFactor = (1+1)/(maxDiff);	// zoomFactor represents fraction in formula
+
+
+
+
 	// for each track read in all points
-	int numTracks = trkFileReader.getTotalTrkNum();  // number of tracks in input file
 	for (int trackIndex = 0; trackIndex < numTracks; ++trackIndex) {
 
 		int numPointsInTrack = trkFileReader.getPointNumInTrk(trackIndex); // number of points in current track
 		for (int pointIndex = 0; pointIndex < numPointsInTrack; ++pointIndex) {
 			std::vector<float> point;
 			trkFileReader.readPoint(trackIndex, pointIndex, point);
-			line1Positions.push_back(glm::vec3(point[0]/130, point[2]/130, point[1]/130)); // swap y and z (we use different coords)
-			// TODO center data mean at origin
-		}
+            glm::vec3 pos = glm::vec3(point[0], point[2], point[1]);// swap y and z (we use different coords)
+
+            if(pointIndex % 1000==0){qDebug() << "Before:" << pos.x << "," << pos.y << "," << pos.z;}
+
+
+            // move to center of coordinate system
+            pos -= meanPosition;
+			pos = (pos-minValue)*zoomFactor+glm::vec3(-1); // see formula from wikimedia
+			if(pointIndex % 1000==0){qDebug() << "After:" << pos.x << "," << pos.y << "," << pos.z;}
+
+
+            line1Positions.push_back(pos);
+        }
 	}
 
 	// close input file

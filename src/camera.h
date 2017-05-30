@@ -53,7 +53,10 @@ public:
 
 	glm::vec3 getUp() { return mUp; };
 
-	glm::vec3 getRight() { return glm::inverse(mViewMatrix)[0]; };
+	glm::vec3 getRight() {
+		glm::vec4 a = glm::inverse(mViewMatrix)[0];
+		return glm::vec3(a);
+	};
 
 	glm::vec3 getTarget() { return mTarget; };
 
