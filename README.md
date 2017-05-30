@@ -21,8 +21,8 @@ Support for .trk reading is enabled by an external library [**libtrkfileio**](ht
 An example dataset of the human connectome is included. Moreover, the framework allows to generate random line data for testing.
 
 ## Video
-Is going to be uploaded to Youtube under the title
-["SpaghettiVis - An implementation of Everts et al. dense line data visualization"](https://www.youtube.com/results?search_query=SpaghettiVis+An+implementation+of+Everts+et+al.+dense+line+data+visualization).
+Uploaded on Youtube: 
+[**SpaghettiVis: An implementation of Everts et al. dense line data visualization**](https://www.youtube.com/watch?v=fPJtKaP3_kU).
 
 ## Thanks to
     * Everts et al. [1] for the great visualization algorithm
