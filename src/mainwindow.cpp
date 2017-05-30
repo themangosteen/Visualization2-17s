@@ -154,7 +154,6 @@ bool MainWindow::loadTRKData(QString &filename) {
 
 	datasetLines.clear();
 
-	std::vector<glm::vec3> line1Positions; // TODO store tracks as separate lines
 
 	std::string strInputFilePath  = filename.toStdString();
 
@@ -209,6 +208,7 @@ bool MainWindow::loadTRKData(QString &filename) {
 
 	// for each track read in all points
 	for (int trackIndex = 0; trackIndex < numTracks; ++trackIndex) {
+        std::vector<glm::vec3> linePositions;
 
 		int numPointsInTrack = trkFileReader.getPointNumInTrk(trackIndex); // number of points in current track
 		for (int pointIndex = 0; pointIndex < numPointsInTrack; ++pointIndex) {
@@ -225,9 +225,11 @@ bool MainWindow::loadTRKData(QString &filename) {
 //			if(pointIndex % 4000==0){qDebug() << "After:" << pos.x << "," << pos.y << "," << pos.z;}
 
 
-            line1Positions.push_back(pos);
+            linePositions.push_back(pos);
         }
-	}
+        generateAdditionalLineVertexData(linePositions);
+
+    }
 
 	// close input file
 	trkFileReader.close();
@@ -245,10 +247,9 @@ bool MainWindow::loadTRKData(QString &filename) {
 		ui->spinBoxLineHaloMaxDepth->setValue(0.1f);
 	}
 
-	generateAdditionalLineVertexData(line1Positions);
 
-	ui->spinBoxTestDataNumVertices->setValue(datasetLines[0].size());
-	qDebug() << "Loaded .trk data with:" << line1Positions.size() << "line vertices," << datasetLines[0].size() << "vertices after duplication for triangle strip drawing. Each vertex consists of 8 floats (3 pos, 3 direction to next, 2 uv for triangle strip drawing).";
+	ui->spinBoxTestDataNumVertices->setValue(sumOfAllPoints);
+	qDebug() << "Loaded .trk data with:" << sumOfAllPoints << "line vertices," << " Each vertex consists of 8 floats (3 pos, 3 direction to next, 2 uv for triangle strip drawing).";
 
 	return true;
 }

@@ -116,8 +116,8 @@ private:
 	// each line vertex has 8 floats: 3 pos, 3 direction to next, 2 uv for triangle strip texturing
 	// NOTE: we store two sequential copies of each vertex (one with v = 0, one with v = 1) to draw lines as triangle strips
 	QOpenGLShaderProgram *shaderLinesWithHalos;
-	QOpenGLVertexArrayObject vaoLines; // VAO remembers states of buffer objects, allowing to easily bind/unbind different buffer states for rendering different objects in a scene.
-	QOpenGLBuffer vboLines;
+	std::vector<QOpenGLVertexArrayObject*> vaoLines; // VAO remembers states of buffer objects, allowing to easily bind/unbind different buffer states for rendering different objects in a scene.
+	std::vector<QOpenGLBuffer*> vboLines;
 
 	// GUI ELEMENTS
 

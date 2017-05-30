@@ -52,7 +52,9 @@ void GLWidget::cleanup()
 	// makes the widget's rendering context the current OpenGL rendering context
 	makeCurrent();
 
-	vaoLines.destroy();
+	for(int i=0; i<lines->size(); i++) {
+		(*vaoLines[i]).destroy();
+	}
 	shaderLinesWithHalos = nullptr;
 
 	doneCurrent();
@@ -76,9 +78,9 @@ void GLWidget::initializeGL()
 	connect(logger, &QOpenGLDebugLogger::messageLogged, this, &GLWidget::printDebugMsg);
 	logger->startLogging();
 
-	if (!vaoLines.create()) {
-		qDebug() << "error creating vao";
-	}
+//	if (!vaoLines.create()) {
+//		qDebug() << "error creating vao";
+//	}
 
 	initShaders();
 
@@ -138,48 +140,69 @@ void GLWidget::initLineRenderMode(std::vector<std::vector<LineVertex> > *lines)
 
 void GLWidget::allocateGPUBufferLineData()
 {
+
+
 	// makes the widget's rendering context the current OpenGL rendering context
 	makeCurrent();
 
 	// load lines
-	// TODO: currently we just use one single line (one single array of vertices)
 	nrLines = lines->size();
+// BIND VERTEX BUFFER TO SHADER ATTRIBUTES
+	for(int i = 0; i<nrLines; i++) {
 
-	std::vector<LineVertex> line1 = (*lines)[0];
 
-	//qDebug() << "line number of vertices (duplicated to draw as triangle strips):" << line1.size();
+		std::vector<LineVertex> line1 = (*lines)[i];
+//        std::vector<LineVertex> line1 = lines[i];
 
-	QOpenGLVertexArrayObject::Binder vaoBinder(&vaoLines); // destructor unbinds (i.e. when out of scope)
-	QOpenGLFunctions *f = QOpenGLContext::currentContext()->functions();
+		//qDebug() << "line number of vertices (duplicated to draw as triangle strips):" << line1.size();
+//		QOpenGLVertexArrayObject vaoLine;
+//
+//		if (!vaoLine.create()) {
+//			qDebug() << "error creating vao";
+//		}
+		vaoLines.push_back(new QOpenGLVertexArrayObject());
+		QOpenGLVertexArrayObject* vaoLine = vaoLines[vaoLines.size()-1];
+		QOpenGLVertexArrayObject::Binder vaoBinder(vaoLine); // destructor unbinds (i.e. when out of scope)
+		QOpenGLFunctions *f = QOpenGLContext::currentContext()->functions();
 
-	// ALLOCATE VERTEX DATA ON BUFFER
-	// allocate line vertex data to vertex buffer object
-	// each vertex has 8 floats: 3 pos, 3 direction to next, 2 uv for triangle strip texturing
-	// we store all three attributes interleaved on single vbo [<posdirectionuv><posdirectionuv>...]
-	// NOTE: we store two sequential copies of each vertex (one with v = 0, one with v = 1) to draw lines as triangle strips
-	vboLines.create();
-	vboLines.bind();
-	vboLines.setUsagePattern(QOpenGLBuffer::StaticDraw);
-	vboLines.allocate(&line1[0], line1.size() * 8 * sizeof(GLfloat));
+		// ALLOCATE VERTEX DATA ON BUFFER
+		// allocate line vertex data to vertex buffer object
+		// each vertex has 8 floats: 3 pos, 3 direction to next, 2 uv for triangle strip texturing
+		// we store all three attributes interleaved on single vbo [<posdirectionuv><posdirectionuv>...]
+		// NOTE: we store two sequential copies of each vertex (one with v = 0, one with v = 1) to draw lines as triangle strips
+		vboLines.push_back(new QOpenGLBuffer());
+		QOpenGLBuffer* vboLine = vboLines[vboLines.size()-1];
+		vboLine->create();
+		vboLine->bind();
+		vboLine->setUsagePattern(QOpenGLBuffer::StaticDraw);
+		vboLine->allocate(&line1[0], line1.size() * 8 * sizeof(GLfloat));
 
-	// BIND VERTEX BUFFER TO SHADER ATTRIBUTES
-	shaderLinesWithHalos->bind();
 
-	// important: offset is meant between shader attributes! not between data of individual vertices!
-	// for sequential vbo attribute storage [xyzxyzxyzxyzxyz...uvuvuvuvuvuvuv...] we just set offset to first position of uv
-	// however here for interleaved attribute storage [xyzxyzuv...xyzxyzuv...], i.e. sequential vertex data storage
-	// we must use the stride to indicate the size of the vertex data (here 8 floats) and attribute offset inside the stride
-	// attributeStartPos(vertexindex) = vertexindex*stride + offset
-	shaderLinesWithHalos->enableAttributeArray(0); // assume shader attribute "position" at index 0
-	shaderLinesWithHalos->setAttributeBuffer(0, GL_FLOAT, 0*sizeof(GLfloat), 3, 8 * sizeof(GL_FLOAT)); // attribute offset 0 byte, 3 floats xyz, vertex stride 8*4 byte
-	shaderLinesWithHalos->enableAttributeArray(1); // assume shader attribute "direction" at index 1
-	shaderLinesWithHalos->setAttributeBuffer(1, GL_FLOAT, 3*sizeof(GLfloat), 3, 8 * sizeof(GL_FLOAT)); // attribute offset 3*4 byte, 3 floats xyz, vertex stride 8*4 byte
-	shaderLinesWithHalos->enableAttributeArray(2); // assume shader attribute "uv" at index 2
-	shaderLinesWithHalos->setAttributeBuffer(2, GL_FLOAT, 6*sizeof(GLfloat), 2, 8 * sizeof(GL_FLOAT)); // attribute offset 6*4 byte, 2 floats uv, vertex stride 8*4 byte
+		shaderLinesWithHalos->bind();
+// important: offset is meant between shader attributes! not between data of individual vertices!
+		// for sequential vbo attribute storage [xyzxyzxyzxyzxyz...uvuvuvuvuvuvuv...] we just set offset to first position of uv
+		// however here for interleaved attribute storage [xyzxyzuv...xyzxyzuv...], i.e. sequential vertex data storage
+		// we must use the stride to indicate the size of the vertex data (here 8 floats) and attribute offset inside the stride
+		// attributeStartPos(vertexindex) = vertexindex*stride + offset
+		shaderLinesWithHalos->enableAttributeArray(0); // assume shader attribute "position" at index 0
+		shaderLinesWithHalos->setAttributeBuffer(0, GL_FLOAT, 0 * sizeof(GLfloat), 3, 8 *
+																					  sizeof(GL_FLOAT)); // attribute offset 0 byte, 3 floats xyz, vertex stride 8*4 byte
+		shaderLinesWithHalos->enableAttributeArray(1); // assume shader attribute "direction" at index 1
+		shaderLinesWithHalos->setAttributeBuffer(1, GL_FLOAT, 3 * sizeof(GLfloat), 3, 8 *
+																					  sizeof(GL_FLOAT)); // attribute offset 3*4 byte, 3 floats xyz, vertex stride 8*4 byte
+		shaderLinesWithHalos->enableAttributeArray(2); // assume shader attribute "uv" at index 2
+		shaderLinesWithHalos->setAttributeBuffer(2, GL_FLOAT, 6 * sizeof(GLfloat), 2, 8 *
+																					  sizeof(GL_FLOAT)); // attribute offset 6*4 byte, 2 floats uv, vertex stride 8*4 byte
 
-	// unbind buffer and shader program
-	vboLines.release();
-	shaderLinesWithHalos->release();
+		// unbind buffer and shader program
+		vboLine->release();
+
+		shaderLinesWithHalos->release();
+	}
+
+
+
+
 
 	// display memory usage
 	if (GL_NVX_gpu_memory_info_supported) {
@@ -216,46 +239,52 @@ void GLWidget::paintGL()
 
 void GLWidget::drawLines()
 {
+
 	QOpenGLFunctions *glf = QOpenGLContext::currentContext()->functions();
 
-	// BIND BUFFERS AND INIT SHADER UNIFORMS
-
-	// bind vertex array object to bind all vbos associated with it
-	QOpenGLVertexArrayObject::Binder vaoBinder(&vaoLines); // destructor unbinds (i.e. when out of scope)
-
-	// bind shader program and set shader uniforms
-	// note that glm uses column vectors, qt uses row vectors, thus transpose
-	shaderLinesWithHalos->bind();
-	QMatrix4x4 viewMat = QMatrix4x4(glm::value_ptr(camera.getViewMatrix())).transposed();
-	QMatrix4x4 projMat = QMatrix4x4(glm::value_ptr(camera.getProjectionMatrix())).transposed();
-	glm::vec3 camPosGLM = camera.getPosition();
-	QVector3D camPos = QVector3D(camPosGLM.x,camPosGLM.y,camPosGLM.z);
-	QVector3D lightPos = QVector3D(0, 0, 100);
-	shaderLinesWithHalos->setUniformValue(shaderLinesWithHalos->uniformLocation("viewMat"), viewMat);
-	shaderLinesWithHalos->setUniformValue(shaderLinesWithHalos->uniformLocation("projMat"), projMat);
-	shaderLinesWithHalos->setUniformValue(shaderLinesWithHalos->uniformLocation("inverseProjMat"), projMat.inverted());
-	shaderLinesWithHalos->setUniformValue(shaderLinesWithHalos->uniformLocation("lightPos"), lightPos); // in view space
-	shaderLinesWithHalos->setUniformValue(shaderLinesWithHalos->uniformLocation("cameraPos"), camPos);
-	shaderLinesWithHalos->setUniformValue(shaderLinesWithHalos->uniformLocation("colorLine"), 0.0f, 0.0f, 0.0f);
-	shaderLinesWithHalos->setUniformValue(shaderLinesWithHalos->uniformLocation("colorHalo"), 1.0f, 1.0f, 1.0f);
-	shaderLinesWithHalos->setUniformValue(shaderLinesWithHalos->uniformLocation("lineTriangleStripWidth"), lineTriangleStripWidth);
-	shaderLinesWithHalos->setUniformValue(shaderLinesWithHalos->uniformLocation("lineWidthPercentageBlack"), lineWidthPercentageBlack);
-	shaderLinesWithHalos->setUniformValue(shaderLinesWithHalos->uniformLocation("lineWidthDepthCueingFactor"), lineWidthDepthCueingFactor);
-	shaderLinesWithHalos->setUniformValue(shaderLinesWithHalos->uniformLocation("lineHaloMaxDepth"), lineHaloMaxDepth);
-	QVector3D clipPlaneN = QVector3D(clipPlaneNormal.x, clipPlaneNormal.y, clipPlaneNormal.z);
-	if (!enableClipping)
-		clipPlaneN = QVector3D(0,0,0);
-	shaderLinesWithHalos->setUniformValue(shaderLinesWithHalos->uniformLocation("clipPlaneNormal"), clipPlaneN);
-	shaderLinesWithHalos->setUniformValue(shaderLinesWithHalos->uniformLocation("clipPlaneDistance"), clipPlaneDistance);
+	for(int i = 0; i<vaoLines.size(); i++){
 
 
-	// DRAW
+		// BIND BUFFERS AND INIT SHADER UNIFORMS
 
-	glf->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		// bind vertex array object to bind all vbos associated with it
+		QOpenGLVertexArrayObject::Binder vaoBinder(vaoLines[i]); // destructor unbinds (i.e. when out of scope)
 
-	glf->glDrawArrays(GL_TRIANGLE_STRIP, 0, (*lines)[0].size());
 
+// bind shader program and set shader uniforms
+		// note that glm uses column vectors, qt uses row vectors, thus transpose
+		shaderLinesWithHalos->bind();
+		QMatrix4x4 viewMat = QMatrix4x4(glm::value_ptr(camera.getViewMatrix())).transposed();
+		QMatrix4x4 projMat = QMatrix4x4(glm::value_ptr(camera.getProjectionMatrix())).transposed();
+		glm::vec3 camPosGLM = camera.getPosition();
+		QVector3D camPos = QVector3D(camPosGLM.x,camPosGLM.y,camPosGLM.z);
+		QVector3D lightPos = QVector3D(0, 0, 100);
+		shaderLinesWithHalos->setUniformValue(shaderLinesWithHalos->uniformLocation("viewMat"), viewMat);
+		shaderLinesWithHalos->setUniformValue(shaderLinesWithHalos->uniformLocation("projMat"), projMat);
+		shaderLinesWithHalos->setUniformValue(shaderLinesWithHalos->uniformLocation("inverseProjMat"), projMat.inverted());
+		shaderLinesWithHalos->setUniformValue(shaderLinesWithHalos->uniformLocation("lightPos"), lightPos); // in view space
+		shaderLinesWithHalos->setUniformValue(shaderLinesWithHalos->uniformLocation("cameraPos"), camPos);
+		shaderLinesWithHalos->setUniformValue(shaderLinesWithHalos->uniformLocation("colorLine"), 0.0f, 0.0f, 0.0f);
+		shaderLinesWithHalos->setUniformValue(shaderLinesWithHalos->uniformLocation("colorHalo"), 1.0f, 1.0f, 1.0f);
+		shaderLinesWithHalos->setUniformValue(shaderLinesWithHalos->uniformLocation("lineTriangleStripWidth"), lineTriangleStripWidth);
+		shaderLinesWithHalos->setUniformValue(shaderLinesWithHalos->uniformLocation("lineWidthPercentageBlack"), lineWidthPercentageBlack);
+		shaderLinesWithHalos->setUniformValue(shaderLinesWithHalos->uniformLocation("lineWidthDepthCueingFactor"), lineWidthDepthCueingFactor);
+		shaderLinesWithHalos->setUniformValue(shaderLinesWithHalos->uniformLocation("lineHaloMaxDepth"), lineHaloMaxDepth);
+		QVector3D clipPlaneN = QVector3D(clipPlaneNormal.x, clipPlaneNormal.y, clipPlaneNormal.z);
+		if (!enableClipping)
+			clipPlaneN = QVector3D(0,0,0);
+		shaderLinesWithHalos->setUniformValue(shaderLinesWithHalos->uniformLocation("clipPlaneNormal"), clipPlaneN);
+		shaderLinesWithHalos->setUniformValue(shaderLinesWithHalos->uniformLocation("clipPlaneDistance"), clipPlaneDistance);
+
+		// DRAW
+
+		glf->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		glf->glDrawArrays(GL_TRIANGLE_STRIP, 0, (*lines)[i].size());
+
+	}
 	shaderLinesWithHalos->release();
+
 }
 
 void GLWidget::calculateFPS()
