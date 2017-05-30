@@ -6,7 +6,7 @@ based on [**2009 Everts et al. "Depth-Dependent Halos: Illustrative Rendering of
 The framework is based on a Qt 5 UI and uses OpenGL 3.3+ for drawing.
 The [**source code**](https://github.com/mangostaniko/Visualization2-17s) consists of C++ and GLSL 3.3 shader code.
 
-Please note that for now CMake build files are provided for Linux only. Dependencies are
+Please note that for now CMake build files are provided for Linux only. Dependencies are Qt 5 and OpenGL 3.3.
 
 Features:
   * draw entire dense line datasets (nerve fiber tractography, flow visualization, ...) without clutter
@@ -22,6 +22,8 @@ An example dataset of the human connectome is included. Moreover, the framework 
 
 ## Video
 TODO
+
+note: for video show comparison of bundling = 0 and bundling non zero for connectome!!!
 
 ## Screenshots
 ![Framework Screenshot](../../screenshot.png)

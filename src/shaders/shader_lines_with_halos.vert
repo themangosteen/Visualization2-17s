@@ -35,6 +35,11 @@ void main()
     if (dot(viewAlignedPosition, clipPlaneNormal) > clipPlaneDistance)
         discardFragment = 1;
 
+    // dirty hack: we use this to discard fragments connecting end and start vertices of two lines
+    // this allows us to just use one vbo for all the triangle strip vertices which is much faster.
+    if (position.z == 42.4242)
+        discardFragment = 1;
+
     gl_Position = projMat * viewMat * vec4(viewAlignedPosition, 1.0);
     vertDirection = direction;
     vertUV = uv;

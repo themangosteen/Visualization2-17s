@@ -164,7 +164,7 @@ bool MainWindow::loadTRKData(QString &filename) {
 		return false;
 
     // first calculate measures
-    int numTracks = trkFileReader.getTotalTrkNum();  // number of tracks in input file
+	int numTracks = trkFileReader.getTotalTrkNum(); // number of tracks in input file
     glm::vec3 meanPosition = glm::vec3(0,0,0);
     glm::vec3 minCoordinates = glm::vec3(10000000,1000000,1000000);
     glm::vec3 maxCoordinates = glm::vec3(-10000000,-1000000,-1000000);
@@ -205,8 +205,6 @@ bool MainWindow::loadTRKData(QString &filename) {
 	float zoomFactor = (1+1)/(maxDiff);	// zoomFactor represents fraction in formula
 
 
-
-
 	// for each track read in all points
 	for (int trackIndex = 0; trackIndex < numTracks; ++trackIndex) {
 
@@ -214,16 +212,16 @@ bool MainWindow::loadTRKData(QString &filename) {
 		for (int pointIndex = 0; pointIndex < numPointsInTrack; ++pointIndex) {
 			std::vector<float> point;
 			trkFileReader.readPoint(trackIndex, pointIndex, point);
-            glm::vec3 pos = glm::vec3(point[0], point[2], point[1]);// swap y and z (we use different coords)
-
-//            if(pointIndex % 4000==0){qDebug() << "Before:" << pos.x << "," << pos.y << "," << pos.z;}
-
+			glm::vec3 pos = glm::vec3(point[0], point[2], point[1]); // swap y and z (we use different coords)
 
             // move to center of coordinate system
             pos -= meanPosition;
 			pos = (pos-minValue)*zoomFactor+glm::vec3(-1); // see formula from wikimedia
-//			if(pointIndex % 4000==0){qDebug() << "After:" << pos.x << "," << pos.y << "," << pos.z;}
 
+			// dirty hack: we use this to discard fragments connecting end and start vertices of two lines
+			// this allows us to just use one vbo for all the triangle strip vertices which is much faster.
+			if (pointIndex == numPointsInTrack-1)
+				pos.z = 42.4242;
 
             line1Positions.push_back(pos);
         }
