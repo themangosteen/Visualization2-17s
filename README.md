@@ -1,6 +1,6 @@
 # Overview
 This project aims to implement a small framework for rendering of dense line data,
-based on [**2009 Everts et al. "Depth-Dependent Halos: Illustrative Rendering of Dense Line Data"**](http://tobias.isenberg.cc/personal/papers/Everts_2009_DDH.pdf).
+based on [**2009 Everts et al. "Depth-Dependent Halos: Illustrative Rendering of Dense Line Data"**](http://tobias.isenberg.cc/personal/papers/Everts_2009_DDH.pdf) [1].
 
 ## Framework
 The framework is based on a Qt 5 UI and uses OpenGL 3.3+ for drawing.
@@ -10,10 +10,10 @@ Please note that for now CMake build files are provided for Linux only. Dependen
 
 Features:
   * draw entire dense line datasets (nerve fiber tractography, flow visualization, ...) without clutter
-  * intuitively visualize depth
-  * emphasize colinear line bundles
+  * intuitively visualize depth (line width is depth dependent, halos occlude other lines)
+  * emphasize colinear line bundles (lines at the same depth are not affected by halos)
   * filter data using clipping plane
-  * concise user interface
+  * concise user interface (it's great, promise!)
 
 ## Supported Data File Formats
 For now only [**TrackVis .trk**](http://www.trackvis.org/docs/?subsect=fileformat) tractography line data is supported.
@@ -21,9 +21,17 @@ Support for .trk reading is enabled by an external library [**libtrkfileio**](ht
 An example dataset of the human connectome is included. Moreover, the framework allows to generate random line data for testing.
 
 ## Video
-TODO
+Is going to be uploaded to Youtube under the title
+["SpaghettiVis - An implementation of Everts et al. dense line data visualization"](https://www.youtube.com/results?search_query=SpaghettiVis+An+implementation+of+Everts+et+al.+dense+line+data+visualization)
 
-note: for video show comparison of bundling = 0 and bundling non zero for connectome!!!
+## Thanks to
+    * Everts et al. [1] for the great visualization algorithm
+    * the organizers of the [**Visualization 2**](https://www.cg.tuwien.ac.at/courses/Visualisierung2/) course at TU Wien
+    * the [**RealtimeVis lab**](https://www.cg.tuwien.ac.at/courses/RTVis/) course at TU Wien for the UI layout and the camera class
 
 ## Screenshots
-![Framework Screenshot](../../screenshot.png)
+![Framework Screenshot 1](../screenshot.png)
+![Framework Screenshot 2](../screenshot2.png)
+
+## References
+[1] Everts, Maarten H., et al. "Depth-dependent halos: Illustrative rendering of dense line data." IEEE Transactions on Visualization and Computer Graphics 15.6 (2009).
