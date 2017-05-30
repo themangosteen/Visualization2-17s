@@ -104,73 +104,44 @@ void MainWindow::generateTestData(int numVertices, glm::vec3 boundingBoxMin, glm
 		line1Positions.push_back(glm::vec3(currentPos));
 	}
 
-	// GENERATE ADDITIONAL LINE VERTEX DATA AT LINE POSITIONS (directions and uv)
+	// adjust draw parameters for this dataset
+	ui->spinBoxLineTriangleStripWidth->setValue(0.03f);
+	ui->spinBoxLineWidthPercentageBlack->setValue(0.3f);
+	ui->spinBoxLineWidthDepthCueingFactor->setValue(1.0f);
+	ui->spinBoxLineHaloMaxDepth->setValue(0.02f);
 
-	glm::vec3 directionToCurrent;
-	glm::vec3 directionToNext;
+	generateAdditionalLineVertexData(line1Positions);
 
-	for (int i = 0; i < line1Positions.size(); ++i) {
-
-		LineVertex vertex;
-		vertex.pos = line1Positions[i];
-
-		// generate vertex data: direction to next vertex
-		// take average of direction to current and direction to next for smoother directions
-		if (i == 0) { // first element
-			directionToCurrent = glm::vec3(0,0,0);
-			directionToNext = glm::normalize(line1Positions[i+1] - line1Positions[i]);
-		} else if (i == line1Positions.size()-1) { // last element
-			directionToCurrent = glm::normalize(line1Positions[i] - line1Positions[i-1]);
-			directionToNext = glm::vec3(0,0,0);
-		} else {
-			directionToCurrent = glm::normalize(line1Positions[i] - line1Positions[i-1]);
-			directionToNext = glm::normalize(line1Positions[i+1] - line1Positions[i]);
-		}
-		vertex.directionToNext = glm::normalize(glm::vec3(directionToCurrent + directionToNext));
-
-		// generate vertex data: uv coordinates to render line as view-aligned triangle strips
-		// for this we need two vertices!
-		// u-coordinate is same for both and is interpolated along the length of the whole line,
-		// v-coordinate is set to 0 for vertex on "right" side of the strip and to 1 for vertex on "left" side.
-		float u = ((float)i) / (line1Positions.size()-1);
-		vertex.uv = glm::vec2(u,0);
-		LineVertex vertexCopy = vertex;
-		vertexCopy.uv = glm::vec2(u,1);
-
-		// store the vertex and its copy in sequential manner
-		line1VerticesDoubled.push_back(vertex);
-		line1VerticesDoubled.push_back(vertexCopy);
-	}
-
-	datasetLines.push_back(line1VerticesDoubled);
-
-	qDebug() << "Test line data generated:" << numVertices << "line vertices," << line1VerticesDoubled.size() << "vertices after duplication for triangle strip drawing. Each vertex consists of 8 floats (3 pos, 3 direction to next, 2 uv for triangle strip drawing).";
+	qDebug() << "Test line data generated:" << numVertices << "line vertices," << datasetLines[0].size() << "vertices after duplication for triangle strip drawing. Each vertex consists of 8 floats (3 pos, 3 direction to next, 2 uv for triangle strip drawing).";
 
 	glWidget->initLineRenderMode(&datasetLines);
 }
 
+//! \brief File dialog to open data files.
 void MainWindow::openFileAction()
 {
-	QString filename = QFileDialog::getOpenFileName(this, "Open dataset file...", 0, tr("Data Files (*.sop)"));
+	QString filename = QFileDialog::getOpenFileName(this, "Open dataset file...", 0, tr("TrackVis Tractography Data Files (*.trk)"));
 
 	if (!filename.isEmpty()) {
 		// store filename
 		fileType.filename = filename;
 		std::string fn = filename.toStdString();
+
 		bool success = false;
 
 		// progress bar and top label
 		ui->progressBar->setEnabled(true);
 		ui->labelTop->setText("Loading data ...");
 
+		QString filenameWithoutPath = QString::fromStdString(fn.substr(fn.find_last_of("/") + 1));
 		std::string filenameExtension = fn.substr(fn.find_last_of(".") + 1);
-		if (filenameExtension == "sop") { // LOAD SOP DATA
-			success = false;
-			ui->labelTop->setText("Yes we would love to load SOP data too.");
+		if (filenameExtension == "trk") { // TrackVis .trk Tractography track data
+			fileType.type = TRK;
+			success = loadTRKData(filename);
 		}
 		else {
 			success = false;
-			ui->labelTop->setText("Error loading file " + filename + ": Unknown filename extension.");
+			ui->labelTop->setText("Error loading file " + filenameWithoutPath + ": Unknown filename extension.");
 		}
 
 		ui->progressBar->setEnabled(false);
@@ -178,16 +149,118 @@ void MainWindow::openFileAction()
 		// status message
 		if (success) {
 			QString type;
-			if (fileType.type == SOP) type = "SOP";
-			ui->labelTop->setText("File LOADED [" + filename + "] - Type [" + type + "]");
+			if (fileType.type == TRK) type = "TrackVis Tractography Data";
+			ui->labelTop->setText("File LOADED [" + filenameWithoutPath + "], Type [" + type + "]");
 
 			glWidget->initLineRenderMode(&datasetLines);
 		}
 		else {
-			ui->labelTop->setText("ERROR loading file " + filename + "!");
+			ui->labelTop->setText("ERROR loading file " + filenameWithoutPath + "!");
 			ui->progressBar->setValue(0);
 		}
 	}
+}
+
+//! \brief Load TrackVis Tractography Track Line Data.
+//! \param filename path to file
+//! \return true if file was successfully loaded, else false
+//! This uses libtrkfileio by lheric from https://github.com/lheric/libtrkfileio.
+bool MainWindow::loadTRKData(QString &filename) {
+
+	datasetLines.clear();
+
+	std::vector<glm::vec3> line1Positions; // TODO store tracks as separate lines
+
+	std::string strInputFilePath  = filename.toStdString();
+
+	// create reader and open file
+	TrkFileReader trkFileReader(strInputFilePath);
+	if (!trkFileReader.open())
+		return false;
+
+	// for each track read in all points
+	int numTracks = trkFileReader.getTotalTrkNum();  // number of tracks in input file
+	for (int trackIndex = 0; trackIndex < numTracks; ++trackIndex) {
+
+		int numPointsInTrack = trkFileReader.getPointNumInTrk(trackIndex); // number of points in current track
+		for (int pointIndex = 0; pointIndex < numPointsInTrack; ++pointIndex) {
+			std::vector<float> point;
+			trkFileReader.readPoint(trackIndex, pointIndex, point);
+			line1Positions.push_back(glm::vec3(point[0]/130, point[2]/130, point[1]/130)); // swap y and z (we use different coords)
+			// TODO center data mean at origin
+		}
+	}
+
+	// close input file
+	trkFileReader.close();
+
+	// adjust draw parameters for this dataset
+	ui->spinBoxLineTriangleStripWidth->setValue(0.001f);
+	ui->spinBoxLineWidthPercentageBlack->setValue(0.4f);
+	ui->spinBoxLineWidthDepthCueingFactor->setValue(1.0f);
+	ui->spinBoxLineHaloMaxDepth->setValue(0.1f);
+
+	generateAdditionalLineVertexData(line1Positions);
+
+	ui->spinBoxTestDataNumVertices->setValue(datasetLines[0].size());
+	qDebug() << "Loaded .trk data with:" << line1Positions.size() << "line vertices," << datasetLines[0].size() << "vertices after duplication for triangle strip drawing. Each vertex consists of 8 floats (3 pos, 3 direction to next, 2 uv for triangle strip drawing).";
+
+	return true;
+}
+
+//! \brief generateAdditionalLineVertexData
+//! \param linePositions x,y,z coords of line points
+//! generate additional line vertex data at line positions (directions and uv)
+//! take x,y,z line points as input and store line vertices,
+//! each vertex consists of 8 floats: 3 position, 3 direction to next vertex, 2 uv.
+//! NOTE: two copies of all vertices are stored in sequential manner,
+//! with uv v-coordinate 0 and 1 to use for drawing as triangle strips (two strip vertices for each line vertex).
+//! u-coordinate is same for both and is interpolated along the length of the whole line,
+//! v-coordinate is set to 0 for vertex on "right" side of the strip and to 1 for vertex on "left" side.
+//! direction to next vertex: take average of direction to current and direction to next for smoother directions.
+void MainWindow::generateAdditionalLineVertexData(std::vector<glm::vec3> linePositions)
+{
+	// GENERATE ADDITIONAL LINE VERTEX DATA AT LINE POSITIONS (directions and uv)
+
+	std::vector<LineVertex> lineVerticesDoubled;
+
+	glm::vec3 directionToCurrent;
+	glm::vec3 directionToNext;
+
+	for (int i = 0; i < linePositions.size(); ++i) {
+
+		LineVertex vertex;
+		vertex.pos = linePositions[i];
+
+		// generate vertex data: direction to next vertex
+		// take average of direction to current and direction to next for smoother directions
+		if (i == 0) { // first element
+			directionToCurrent = glm::vec3(0,0,0);
+			directionToNext = glm::normalize(linePositions[i+1] - linePositions[i]);
+		} else if (i == linePositions.size()-1) { // last element
+			directionToCurrent = glm::normalize(linePositions[i] - linePositions[i-1]);
+			directionToNext = glm::vec3(0,0,0);
+		} else {
+			directionToCurrent = glm::normalize(linePositions[i] - linePositions[i-1]);
+			directionToNext = glm::normalize(linePositions[i+1] - linePositions[i]);
+		}
+		vertex.directionToNext = glm::normalize(glm::vec3(directionToCurrent + directionToNext));
+
+		// generate vertex data: uv coordinates to render line as view-aligned triangle strips
+		// for this we need two vertices!
+		// u-coordinate is same for both and is interpolated along the length of the whole line,
+		// v-coordinate is set to 0 for vertex on "right" side of the strip and to 1 for vertex on "left" side.
+		float u = ((float)i) / (linePositions.size()-1);
+		vertex.uv = glm::vec2(u,0);
+		LineVertex vertexCopy = vertex;
+		vertexCopy.uv = glm::vec2(u,1);
+
+		// store the vertex and its copy in sequential manner
+		lineVerticesDoubled.push_back(vertex);
+		lineVerticesDoubled.push_back(vertexCopy);
+	}
+
+	datasetLines.push_back(lineVerticesDoubled);
 }
 
 void MainWindow::closeAction()
@@ -235,9 +308,9 @@ void MainWindow::displayGraphicsDeviceInfo(QString string)
 
 void MainWindow::on_generateTestDataButton_clicked()
 {
-	// the value in the testDataNumVerticesSpinBox should represent the numer of total vertices of the triangle strips
+	// the value in the spinBoxTestDataNumVertices should represent the numer of total vertices of the triangle strips
 	// we need half of that for the line vertices test data, since line vertices will be duplicated for triangle strip generation
-	generateTestData(ui->testDataNumVerticesSpinBox->value()/2, glm::vec3(-1.f,-1.f,-1.f), glm::vec3(1.f,1.f,1.f));
+	generateTestData(ui->spinBoxTestDataNumVertices->value()/2, glm::vec3(-1.f,-1.f,-1.f), glm::vec3(1.f,1.f,1.f));
 }
 
 void MainWindow::renderModeChanged(int index)

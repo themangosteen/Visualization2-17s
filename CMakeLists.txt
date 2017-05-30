@@ -32,13 +32,18 @@ find_package(Qt5OpenGLExtensions)
 # relative path to every single h and cpp file
 set(SRC_CLASSES 
     src/main.cpp
-    src/mainwindow.cpp
     src/mainwindow.h
-    src/glwidget.cpp
+    src/mainwindow.cpp
     src/glwidget.h
+    src/glwidget.cpp
     src/linevertex.h
-    src/camera.cpp
     src/camera.h
+    src/camera.cpp
+
+    # small external open source code to read .trk TrackVis tractography data
+    src/libtrkfileio/defs.h
+    src/libtrkfileio/trkfileio.h
+    src/libtrkfileio/trkfileio.cpp
 
 )
 	
@@ -77,14 +82,17 @@ target_link_libraries(
 )
 
 
-### COPY DATA ###
+### COPY SHADERS AND DATA ###
 
-add_custom_target(shaders)
+add_custom_target(resources)
 
-add_custom_command(TARGET shaders PRE_BUILD
+add_custom_command(TARGET resources PRE_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
         ${CMAKE_CURRENT_SOURCE_DIR}/src/shaders
         ${CMAKE_BINARY_DIR}/shaders
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/data
+        ${CMAKE_BINARY_DIR}/data
 )
 
-add_dependencies(${PROJECT_NAME} shaders)
+add_dependencies(${PROJECT_NAME} resources)

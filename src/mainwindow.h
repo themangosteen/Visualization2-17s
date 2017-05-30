@@ -8,6 +8,8 @@
 #include <QStatusBar>
 #include <QVariant>
 
+#include "libtrkfileio/trkfileio.h"
+
 #include "glwidget.h"
 #include "linevertex.h"
 
@@ -60,6 +62,8 @@ protected slots:
 
 	glm::vec3 randomPosInBoundingBox(glm::vec3 boundingBoxMin, glm::vec3 boundingBoxMax);
 	void generateTestData(int numVertices, glm::vec3 boundingBoxMin, glm::vec3 boundingBoxMax);
+	bool loadTRKData(QString &filename);
+	void generateAdditionalLineVertexData(std::vector<glm::vec3> linePositions);
 
 private:
 
@@ -69,7 +73,7 @@ private:
 
     enum DataType
     {
-		SOP
+		TRK
     };
 
     struct FileType
