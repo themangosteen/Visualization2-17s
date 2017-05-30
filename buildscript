@@ -1,8 +1,0 @@
-#!/bin/bash
-
-rm -r ./build/*
-cd ./build
-cmake .. # use .. as cmake source dir, but put cmake build files in build dir
-time make
-
-# for faster rebuild (if CMakeLists unchanged) just run make from build dir.

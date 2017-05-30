@@ -24,11 +24,15 @@ An example dataset of the human connectome is included. Moreover, the framework 
 Uploaded on Youtube: 
 [**SpaghettiVis: An implementation of Everts et al. dense line data visualization**](https://www.youtube.com/watch?v=fPJtKaP3_kU).
 
-## How to run the program
-cd build
-cmake ..
-make
-./vis2
+## How to run
+
+in directory containing CMakeLists.txt
+
+    mkdir build
+    cd build
+    cmake ..
+    make
+    ./vis2
 
 ## Thanks to
     * Everts et al. [1] for the great visualization algorithm
