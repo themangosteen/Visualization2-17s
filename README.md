@@ -22,7 +22,7 @@ An example dataset of the human connectome is included. Moreover, the framework 
 
 ## Video
 Is going to be uploaded to Youtube under the title
-["SpaghettiVis - An implementation of Everts et al. dense line data visualization"](https://www.youtube.com/results?search_query=SpaghettiVis+An+implementation+of+Everts+et+al.+dense+line+data+visualization)
+["SpaghettiVis - An implementation of Everts et al. dense line data visualization"](https://www.youtube.com/results?search_query=SpaghettiVis+An+implementation+of+Everts+et+al.+dense+line+data+visualization).
 
 ## Thanks to
     * Everts et al. [1] for the great visualization algorithm
