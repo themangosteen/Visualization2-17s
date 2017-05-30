@@ -17,8 +17,6 @@ set(CMAKE_AUTOMOC ON) # run qt moc (meta object compiler, expands Q_OBJECT c++ u
 ### EXTERNAL LIBRARIES ###
 
 find_package(OpenGL REQUIRED)
-find_package(GLEW REQUIRED)
-find_package(GLUT REQUIRED) # for compatibility with deprecated opengl glu* functions
 find_package(Qt5Core)
 find_package(Qt5Gui)
 find_package(Qt5UiTools)
@@ -63,16 +61,12 @@ add_executable(${PROJECT_NAME} ${SRC_CLASSES} ${SRC_SHADERS} ${UI_HEADERS})
 ### INCLUDE HEADER FILES ###
 include_directories(
     ${OPENGL_INCLUDE_DIRS}
-    ${GLEW_INCLUDE_DIRS}
-    ${GLUT_INCLUDE_DIR}
 )
 
 ### LINK LIBRARIES ###
 target_link_libraries(
     ${PROJECT_NAME}
     ${OPENGL_LIBRARIES}
-    ${GLEW_LIBRARIES}
-    ${GLUT_LIBRARIES}
     Qt5::Core
     Qt5::Gui
     Qt5::UiTools

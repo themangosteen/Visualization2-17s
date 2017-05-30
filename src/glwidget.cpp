@@ -2,13 +2,6 @@
 
 #include <QMouseEvent>
 #include <QDir>
-#ifdef __linux__
-#include <GL/glut.h>
-#elif _WIN32
-#include <gl/GLU.h>
-#else
-#error platform not supported
-#endif
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 

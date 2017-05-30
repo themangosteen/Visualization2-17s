@@ -44,9 +44,6 @@ MainWindow::~MainWindow()
 	delete ui;
 }
 
-//! \brief generate a random position within an axis-aligned bounding box
-//! \param boundingBoxMin position defining start of axis aligned bounding box
-//! \param boundingBoxMax position defining end of axis aligned bounding box
 glm::vec3 MainWindow::randomPosInBoundingBox(glm::vec3 boundingBoxMin, glm::vec3 boundingBoxMax)
 {
 	float rx = ((boundingBoxMax.x - boundingBoxMin.x) * ((float) rand() / RAND_MAX)) + boundingBoxMin.x;
@@ -56,13 +53,6 @@ glm::vec3 MainWindow::randomPosInBoundingBox(glm::vec3 boundingBoxMin, glm::vec3
 	return glm::vec3(rx, ry, rz);
 }
 
-//! \brief generate vertices along smooth lines within given bounding box
-//! \param numVertices this is only half the number of vertices generated: two copies of each vertex are stored in sequential manner to be able to render triangle strips later
-//! \param boundingBoxMin position defining start of axis aligned bounding box
-//! \param boundingBoxMax position defining end of axis aligned bounding box
-//! each vertex consists of 8 floats: 3 position, 3 direction to next vertex, 2 uv
-//! NOTE: two copies of all vertices are stored in sequential manner,
-//! with uv v-coordinate 0 and 1 to use for drawing as triangle strips (two strip vertices for each line vertex)
 void MainWindow::generateTestData(int numVertices, glm::vec3 boundingBoxMin, glm::vec3 boundingBoxMax)
 {
 	srand(time(NULL)); // change pseudorandom number generator seed
@@ -117,7 +107,6 @@ void MainWindow::generateTestData(int numVertices, glm::vec3 boundingBoxMin, glm
 	glWidget->initLineRenderMode(&datasetLines);
 }
 
-//! \brief File dialog to open data files.
 void MainWindow::openFileAction()
 {
 	QString filename = QFileDialog::getOpenFileName(this, "Open dataset file...", 0, tr("TrackVis Tractography Data Files (*.trk)"));
@@ -161,10 +150,6 @@ void MainWindow::openFileAction()
 	}
 }
 
-//! \brief Load TrackVis Tractography Track Line Data.
-//! \param filename path to file
-//! \return true if file was successfully loaded, else false
-//! This uses libtrkfileio by lheric from https://github.com/lheric/libtrkfileio.
 bool MainWindow::loadTRKData(QString &filename) {
 
 	datasetLines.clear();
@@ -208,16 +193,6 @@ bool MainWindow::loadTRKData(QString &filename) {
 	return true;
 }
 
-//! \brief generateAdditionalLineVertexData
-//! \param linePositions x,y,z coords of line points
-//! generate additional line vertex data at line positions (directions and uv)
-//! take x,y,z line points as input and store line vertices,
-//! each vertex consists of 8 floats: 3 position, 3 direction to next vertex, 2 uv.
-//! NOTE: two copies of all vertices are stored in sequential manner,
-//! with uv v-coordinate 0 and 1 to use for drawing as triangle strips (two strip vertices for each line vertex).
-//! u-coordinate is same for both and is interpolated along the length of the whole line,
-//! v-coordinate is set to 0 for vertex on "right" side of the strip and to 1 for vertex on "left" side.
-//! direction to next vertex: take average of direction to current and direction to next for smoother directions.
 void MainWindow::generateAdditionalLineVertexData(std::vector<glm::vec3> linePositions)
 {
 	// GENERATE ADDITIONAL LINE VERTEX DATA AT LINE POSITIONS (directions and uv)

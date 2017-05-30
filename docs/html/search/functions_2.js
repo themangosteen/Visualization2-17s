@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['randomposinboundingbox',['randomPosInBoundingBox',['../classMainWindow.html#a53a2807f9b3f75d5c1e95d76a3fbcb18',1,'MainWindow']]]
+  ['loadtrkdata',['loadTRKData',['../classMainWindow.html#a3f4cb32ba8dd42eb4c61457d89ed4e12',1,'MainWindow']]]
 ];

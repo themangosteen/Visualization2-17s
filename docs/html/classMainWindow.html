@@ -72,7 +72,7 @@ $(function() {
 </div><!--header-->
 <div class="contents">
 
-<p>The <a class="el" href="classMainWindow.html" title="The MainWindow class Class related to the MainWindow Qt User Interface Contains a GLWidget for OpenGL...">MainWindow</a> class Class related to the <a class="el" href="classMainWindow.html" title="The MainWindow class Class related to the MainWindow Qt User Interface Contains a GLWidget for OpenGL...">MainWindow</a> Qt User Interface Contains a <a class="el" href="classGLWidget.html" title="The GLWidget class This is the main class containing the OpenGL context All interaction with OpenGL h...">GLWidget</a> for OpenGL Drawing.  
+<p>The <a class="el" href="classMainWindow.html" title="The MainWindow class. ">MainWindow</a> class.  
  <a href="classMainWindow.html#details">More...</a></p>
 
 <p><code>#include &lt;<a class="el" href="mainwindow_8h_source.html">mainwindow.h</a>&gt;</code></p>
@@ -124,7 +124,8 @@ Public Member Functions</h2></td></tr>
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-slots"></a>
 Protected Slots</h2></td></tr>
 <tr class="memitem:a1454793919300e14a8f8b2dca992823f"><td class="memItemLeft" align="right" valign="top"><a id="a1454793919300e14a8f8b2dca992823f"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>openFileAction</b> ()</td></tr>
+void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMainWindow.html#a1454793919300e14a8f8b2dca992823f">openFileAction</a> ()</td></tr>
+<tr class="memdesc:a1454793919300e14a8f8b2dca992823f"><td class="mdescLeft">&#160;</td><td class="mdescRight">File dialog to open data files. <br /></td></tr>
 <tr class="separator:a1454793919300e14a8f8b2dca992823f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aaf34c26116faa8cc952edaae8fba2dea"><td class="memItemLeft" align="right" valign="top"><a id="aaf34c26116faa8cc952edaae8fba2dea"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>closeAction</b> ()</td></tr>
@@ -165,10 +166,16 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>on_horizontalSliderCl
 <tr class="memitem:a9b2056470502a649ee8c136f1a323227"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMainWindow.html#a9b2056470502a649ee8c136f1a323227">generateTestData</a> (int numVertices, glm::vec3 boundingBoxMin, glm::vec3 boundingBoxMax)</td></tr>
 <tr class="memdesc:a9b2056470502a649ee8c136f1a323227"><td class="mdescLeft">&#160;</td><td class="mdescRight">generate vertices along smooth lines within given bounding box  <a href="#a9b2056470502a649ee8c136f1a323227">More...</a><br /></td></tr>
 <tr class="separator:a9b2056470502a649ee8c136f1a323227"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3f4cb32ba8dd42eb4c61457d89ed4e12"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMainWindow.html#a3f4cb32ba8dd42eb4c61457d89ed4e12">loadTRKData</a> (QString &amp;filename)</td></tr>
+<tr class="memdesc:a3f4cb32ba8dd42eb4c61457d89ed4e12"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load TrackVis Tractography Track Line Data.  <a href="#a3f4cb32ba8dd42eb4c61457d89ed4e12">More...</a><br /></td></tr>
+<tr class="separator:a3f4cb32ba8dd42eb4c61457d89ed4e12"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a41bf13cd1b63bdcca047912448a526a6"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMainWindow.html#a41bf13cd1b63bdcca047912448a526a6">generateAdditionalLineVertexData</a> (std::vector&lt; glm::vec3 &gt; linePositions)</td></tr>
+<tr class="memdesc:a41bf13cd1b63bdcca047912448a526a6"><td class="mdescLeft">&#160;</td><td class="mdescRight">generate additional line vertex data (directions and uv) from line positions  <a href="#a41bf13cd1b63bdcca047912448a526a6">More...</a><br /></td></tr>
+<tr class="separator:a41bf13cd1b63bdcca047912448a526a6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pri-types"></a>
 Private Types</h2></td></tr>
-<tr class="memitem:a9e7c2dc935120e6870561bcdcdef7e23"><td class="memItemLeft" align="right" valign="top"><a id="a9e7c2dc935120e6870561bcdcdef7e23"></a>enum &#160;</td><td class="memItemRight" valign="bottom"><b>DataType</b> { <b>SOP</b>
+<tr class="memitem:a9e7c2dc935120e6870561bcdcdef7e23"><td class="memItemLeft" align="right" valign="top"><a id="a9e7c2dc935120e6870561bcdcdef7e23"></a>enum &#160;</td><td class="memItemRight" valign="bottom"><b>DataType</b> { <b>TRK</b>
  }</td></tr>
 <tr class="separator:a9e7c2dc935120e6870561bcdcdef7e23"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
@@ -188,8 +195,44 @@ std::vector&lt; std::vector&lt; <a class="el" href="structLineVertex.html">LineV
 <tr class="separator:a5f96285fef2e629711f2779c37c82f3b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>The <a class="el" href="classMainWindow.html" title="The MainWindow class Class related to the MainWindow Qt User Interface Contains a GLWidget for OpenGL...">MainWindow</a> class Class related to the <a class="el" href="classMainWindow.html" title="The MainWindow class Class related to the MainWindow Qt User Interface Contains a GLWidget for OpenGL...">MainWindow</a> Qt User Interface Contains a <a class="el" href="classGLWidget.html" title="The GLWidget class This is the main class containing the OpenGL context All interaction with OpenGL h...">GLWidget</a> for OpenGL Drawing. </p>
+<div class="textblock"><p>The <a class="el" href="classMainWindow.html" title="The MainWindow class. ">MainWindow</a> class. </p>
+<p>Class related to the <a class="el" href="classMainWindow.html" title="The MainWindow class. ">MainWindow</a> Qt User Interface. Contains a <a class="el" href="classGLWidget.html" title="The GLWidget class This is the main class containing the OpenGL context All interaction with OpenGL h...">GLWidget</a> for OpenGL Drawing. </p>
 </div><h2 class="groupheader">Member Function Documentation</h2>
+<a id="a41bf13cd1b63bdcca047912448a526a6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a41bf13cd1b63bdcca047912448a526a6">&#9670;&nbsp;</a></span>generateAdditionalLineVertexData</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void MainWindow::generateAdditionalLineVertexData </td>
+          <td>(</td>
+          <td class="paramtype">std::vector&lt; glm::vec3 &gt;&#160;</td>
+          <td class="paramname"><em>linePositions</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">protected</span><span class="mlabel">slot</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>generate additional line vertex data (directions and uv) from line positions </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">linePositions</td><td>x,y,z coords of line points</td></tr>
+  </table>
+  </dd>
+</dl>
+<p>take x,y,z line points as input and store line vertices, each vertex consists of 8 floats: 3 position, 3 direction to next vertex, 2 uv. NOTE: two copies of all vertices are stored in sequential manner, with uv v-coordinate 0 and 1 to use for drawing as triangle strips (two strip vertices for each line vertex). u-coordinate is same for both and is interpolated along the length of the whole line, v-coordinate is set to 0 for vertex on "right" side of the strip and to 1 for vertex on "left" side. direction to next vertex: take average of direction to current and direction to next for smoother directions. </p>
+
+</div>
+</div>
 <a id="a9b2056470502a649ee8c136f1a323227"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a9b2056470502a649ee8c136f1a323227">&#9670;&nbsp;</a></span>generateTestData</h2>
 
@@ -235,10 +278,47 @@ std::vector&lt; std::vector&lt; <a class="el" href="structLineVertex.html">LineV
   <table class="params">
     <tr><td class="paramname">numVertices</td><td>this is only half the number of vertices generated: two copies of each vertex are stored in sequential manner to be able to render triangle strips later </td></tr>
     <tr><td class="paramname">boundingBoxMin</td><td>position defining start of axis aligned bounding box </td></tr>
-    <tr><td class="paramname">boundingBoxMax</td><td>position defining end of axis aligned bounding box each vertex consists of 8 floats: 3 position, 3 direction to next vertex, 2 uv NOTE: two copies of all vertices are stored in sequential manner, with uv v-coordinate 0 and 1 to use for drawing as triangle strips (two strip vertices for each line vertex) </td></tr>
+    <tr><td class="paramname">boundingBoxMax</td><td>position defining end of axis aligned bounding box</td></tr>
   </table>
   </dd>
 </dl>
+<p>each vertex consists of 8 floats: 3 position, 3 direction to next vertex, 2 uv NOTE: two copies of all vertices are stored in sequential manner, with uv v-coordinate 0 and 1 to use for drawing as triangle strips (two strip vertices for each line vertex) </p>
+
+</div>
+</div>
+<a id="a3f4cb32ba8dd42eb4c61457d89ed4e12"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3f4cb32ba8dd42eb4c61457d89ed4e12">&#9670;&nbsp;</a></span>loadTRKData</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool MainWindow::loadTRKData </td>
+          <td>(</td>
+          <td class="paramtype">QString &amp;&#160;</td>
+          <td class="paramname"><em>filename</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">protected</span><span class="mlabel">slot</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Load TrackVis Tractography Track Line Data. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">filename</td><td>path to file </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>true if file was successfully loaded, else false</dd></dl>
+<p>This uses libtrkfileio by lheric from <a href="https://github.com/lheric/libtrkfileio">https://github.com/lheric/libtrkfileio</a>. </p>
 
 </div>
 </div>
@@ -294,7 +374,7 @@ std::vector&lt; std::vector&lt; <a class="el" href="structLineVertex.html">LineV
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon May 29 2017 21:40:31 for SpaghettiVis by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue May 30 2017 13:25:04 for SpaghettiVis by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

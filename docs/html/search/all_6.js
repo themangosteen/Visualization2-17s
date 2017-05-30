@@ -5,5 +5,6 @@ var searchData=
   ['linetrianglestripwidth',['lineTriangleStripWidth',['../classGLWidget.html#a64b481120c7449b67fad869d903e8ae4',1,'GLWidget']]],
   ['linevertex',['LineVertex',['../structLineVertex.html',1,'']]],
   ['linewidthdepthcueingfactor',['lineWidthDepthCueingFactor',['../classGLWidget.html#abf94578ba72191af52eb0d434fa03b1b',1,'GLWidget']]],
-  ['linewidthpercentageblack',['lineWidthPercentageBlack',['../classGLWidget.html#aca073ef6f6033cde202cce9995036454',1,'GLWidget']]]
+  ['linewidthpercentageblack',['lineWidthPercentageBlack',['../classGLWidget.html#aca073ef6f6033cde202cce9995036454',1,'GLWidget']]],
+  ['loadtrkdata',['loadTRKData',['../classMainWindow.html#a3f4cb32ba8dd42eb4c61457d89ed4e12',1,'MainWindow']]]
 ];

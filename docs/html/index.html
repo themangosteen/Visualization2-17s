@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.13"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>SpaghettiVis: Main Page</title>
+<title>SpaghettiVis: Overview</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -60,13 +60,32 @@ $(function() {
 
 <div class="header">
   <div class="headertitle">
-<div class="title">SpaghettiVis Documentation</div>  </div>
+<div class="title">Overview </div>  </div>
 </div><!--header-->
 <div class="contents">
-</div><!-- contents -->
+<div class="textblock"><p>This project aims to implement a small framework for rendering of dense line data, based on <a href="http://tobias.isenberg.cc/personal/papers/Everts_2009_DDH.pdf"><b>2009 Everts et al. "Depth-Dependent Halos: Illustrative Rendering of Dense Line Data"</b></a>.</p>
+<h2>Framework</h2>
+<p>The framework is based on a Qt 5 UI and uses OpenGL 3.3+ for drawing. The <a href="https://github.com/mangostaniko/Visualization2-17s"><b>source code</b></a> consists of C++ and GLSL 3.3 shader code.</p>
+<p>Please note that for now CMake build files are provided for Linux only.</p>
+<p>Features:</p><ul>
+<li>draw entire dense line datasets (nerve fiber tractography, flow visualization, ...) without clutter</li>
+<li>intuitively visualize depth</li>
+<li>emphasize colinear line bundles</li>
+<li>filter data using clipping plane</li>
+<li>concise user interface</li>
+</ul>
+<h2>Supported Data File Formats</h2>
+<p>For now only <a href="http://www.trackvis.org/docs/?subsect=fileformat"><b>TrackVis .trk</b></a> tractography line data is supported. Support for .trk reading is enabled by an external library <a href="https://github.com/lheric/libtrkfileio"><b>libtrkfileio</b></a> by lheric. An example dataset of the human connectome is included. Moreover, the framework allows to generate random line data for testing.</p>
+<h2>Video</h2>
+<p>TODO</p>
+<h2>Screenshots</h2>
+<div class="image">
+<img src="../../screenshot.png" alt="Framework Screenshot"/>
+</div>
+ </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon May 29 2017 21:40:31 for SpaghettiVis by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue May 30 2017 13:25:04 for SpaghettiVis by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

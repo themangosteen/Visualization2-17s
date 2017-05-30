@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['updateclipplanenormal',['updateClipPlaneNormal',['../classGLWidget.html#a8d566b5a44b5986104fd2bc4b5c2e007',1,'GLWidget']]]
+  ['openfileaction',['openFileAction',['../classMainWindow.html#a1454793919300e14a8f8b2dca992823f',1,'MainWindow']]]
 ];
