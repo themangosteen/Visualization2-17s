@@ -18,7 +18,9 @@ Features:
 ## Supported Data File Formats
 For now only [**TrackVis .trk**](http://www.trackvis.org/docs/?subsect=fileformat) tractography line data is supported.
 Support for .trk reading is enabled by an external library [**libtrkfileio**](https://github.com/lheric/libtrkfileio) by lheric.
-An example dataset of the human connectome is included. Moreover, the framework allows to generate random line data for testing.
+Moreover, the framework allows to generate random line data for testing.
+
+An example .trk tractography dataset of the human connectome can be found [**here**](https://github.com/danginsburg/webgl-brain-viewer/tree/master/demo_data).
 
 ## Video
 Uploaded on Youtube: 
