@@ -231,16 +231,16 @@ bool MainWindow::loadTRKData(QString &filename) {
 	trkFileReader.close();
 
 	// adjust draw parameters for this dataset
-	ui->spinBoxLineTriangleStripWidth->setValue(0.011f);
+	ui->spinBoxLineTriangleStripWidth->setValue(0.01f);
 	ui->spinBoxLineWidthPercentageBlack->setValue(0.5f);
-	ui->spinBoxLineWidthDepthCueingFactor->setValue(1.0f);
-	ui->spinBoxLineHaloMaxDepth->setValue(0.1f);
+	ui->spinBoxLineWidthDepthCueingFactor->setValue(0.5f);
+	ui->spinBoxLineHaloMaxDepth->setValue(0.04f);
 
-	if(200000<sumOfAllPoints){ // big dataset needs other parameters
-		ui->spinBoxLineTriangleStripWidth->setValue(0.001f);
-		ui->spinBoxLineWidthPercentageBlack->setValue(0.4f);
+	if (sumOfAllPoints > 200000) { // big dataset needs other parameters
+		ui->spinBoxLineTriangleStripWidth->setValue(0.006f);
+		ui->spinBoxLineWidthPercentageBlack->setValue(0.3f);
 		ui->spinBoxLineWidthDepthCueingFactor->setValue(1.0f);
-		ui->spinBoxLineHaloMaxDepth->setValue(0.1f);
+		ui->spinBoxLineHaloMaxDepth->setValue(0.04f);
 	}
 
 	generateAdditionalLineVertexData(line1Positions);

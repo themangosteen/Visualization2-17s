@@ -57,20 +57,25 @@ void Camera::buildProjectionMatrix(void)
 		mProjectionMatrix = glm::ortho(mLeft, mRight, mBottom, mTop, mNear, mFar);
 	}
 	else {
-		mProjectionMatrix = glm::perspective(mFieldOfView, mAspect, mNear, mFar);
+		mProjectionMatrix = glm::perspective(glm::radians(mFieldOfView), mAspect, mNear, mFar);
 	}
 }
 
 void Camera::zoom(float t)
 {
+	// zoom field of view
+	mFieldOfView = glm::max(20.0f, glm::min(mFieldOfView - t, 120.0f));
+	buildProjectionMatrix();
+
+	/*/ zoom position
 	mRadius -= t;
-	if (mRadius < 2.0f)
-		mRadius = 2.0f;
+	if (mRadius < 1.0f)
+		mRadius = 1.0f;
 
 	glm::vec3 f = glm::normalize(mTarget - mPos);
 	mPos += f*t;
-	//mTarget += f*t;
 	buildViewMatrix();
+	*/
 }
 
 void Camera::rotateAzimuth(float t)
