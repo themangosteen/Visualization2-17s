@@ -60,7 +60,6 @@ void MainWindow::generateTestData(int numVertices, glm::vec3 boundingBoxMin, glm
 	datasetLines.clear();
 
 	std::vector<glm::vec3> line1Positions;
-	std::vector<LineVertex> line1VerticesDoubled;
 
 	// GENERATE POSITIONS ALONG A SMOOTH LINE
 
@@ -86,6 +85,7 @@ void MainWindow::generateTestData(int numVertices, glm::vec3 boundingBoxMin, glm
 		}
 
 		// to make line curve smoothly add little bit of target direction slowly each time instead of looking directly at target
+		// it may happen that the direction interpolation reaches target direction before target position is reached, but thats ok and adds variation
 		targetDirection = glm::normalize(targetPos - currentPos);
 		currentDirection = glm::normalize(curviness*currentDirection + (1-curviness)*targetDirection);
 
@@ -154,76 +154,90 @@ bool MainWindow::loadTRKData(QString &filename) {
 
 	datasetLines.clear();
 
-	std::vector<glm::vec3> line1Positions; // TODO store tracks as separate lines
+	// note we store all lines in a single vector, and separate the ends via a flag set below
+	// this makes it easier to render using a single vbo
+	std::vector<glm::vec3> linePositions;
 
-	std::string strInputFilePath  = filename.toStdString();
+	std::string strInputFilePath = filename.toStdString();
 
 	// create reader and open file
 	TrkFileReader trkFileReader(strInputFilePath);
 	if (!trkFileReader.open())
 		return false;
 
-    // first calculate measures
-	int numTracks = trkFileReader.getTotalTrkNum(); // number of tracks in input file
-    glm::vec3 meanPosition = glm::vec3(0,0,0);
-    glm::vec3 minCoordinates = glm::vec3(10000000,1000000,1000000);
-    glm::vec3 maxCoordinates = glm::vec3(-10000000,-1000000,-1000000);
-	int sumOfAllPoints = 0;
+	int numTracks = trkFileReader.getTotalTrkNum(); // number of tractography tracks (lines of traced nerves) in input file
+	int numPointsTotal = 0; // total count of points (vertices) in tracks
+
+	// calculate data mean position and bounding box
+
+	glm::vec3 meanPos = glm::vec3(0, 0, 0);
+	glm::vec3 boundingBoxMin = glm::vec3(std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
+	glm::vec3 boundingBoxMax = glm::vec3(std::numeric_limits<float>::min(), std::numeric_limits<float>::min(), std::numeric_limits<float>::min());
+
     for (int trackIndex = 0; trackIndex < numTracks; ++trackIndex) {
-		glm::vec3 meanPositionInTrack = glm::vec3(0,0,0);
 
-        int numPointsInTrack = trkFileReader.getPointNumInTrk(trackIndex); // number of points in current track
-		sumOfAllPoints += numPointsInTrack;
+		int numPointsInTrack = trkFileReader.getPointNumInTrk(trackIndex);
+		numPointsTotal += numPointsInTrack;
+
         for (int pointIndex = 0; pointIndex < numPointsInTrack; ++pointIndex) {
-            std::vector<float> point;
+
+			std::vector<float> point; // x, y, z
             trkFileReader.readPoint(trackIndex, pointIndex, point);
-			meanPositionInTrack += glm::vec3(point[0], point[2], point[1])/((float)numPointsInTrack); // swap y and z (we use different coords)
-            if(maxCoordinates.x<point[0]){maxCoordinates.x=point[0];}
-            if(minCoordinates.x>point[0]){minCoordinates.x=point[0];}
-            if(maxCoordinates.y<point[2]){maxCoordinates.y=point[2];}
-            if(minCoordinates.y>point[2]){minCoordinates.y=point[2];}
-            if(maxCoordinates.z<point[1]){maxCoordinates.z=point[1];}
-            if(minCoordinates.z>point[1]){minCoordinates.z=point[1];}
+
+			meanPos += glm::vec3(point[0], point[2], point[1]); // swap y and z (we use different coords)
+
+			// adjust bounding box to fit track if necessary
+			if (point[0] > boundingBoxMax.x) { boundingBoxMax.x = point[0]; }
+			if (point[0] < boundingBoxMin.x) { boundingBoxMin.x = point[0]; }
+			if (point[2] > boundingBoxMax.y) { boundingBoxMax.y = point[2]; }
+			if (point[2] < boundingBoxMin.y) { boundingBoxMin.y = point[2]; }
+			if (point[1] > boundingBoxMax.z) { boundingBoxMax.z = point[1]; }
+			if (point[1] < boundingBoxMin.z) { boundingBoxMin.z = point[1]; }
         }
-
-		meanPosition += ((float)numPointsInTrack)*meanPositionInTrack*0.00001f;
     }
-	meanPosition = meanPosition/((float)(sumOfAllPoints*0.00001));
-	minCoordinates -= meanPosition;
-	maxCoordinates -= meanPosition;
 
-	// https://wikimedia.org/api/rest_v1/media/math/render/svg/ad23419556331501d554ed0685b13a526d99d446
-	double diffX = maxCoordinates.x-minCoordinates.x;
-	double diffY = maxCoordinates.y-minCoordinates.y;
-	double diffZ = maxCoordinates.z-minCoordinates.z;
-	double maxDiff = glm::max(diffX,glm::max(diffY,diffZ));
+	meanPos /= static_cast<float>(numPointsTotal);
+
+	// move bounding box such that mean pos is at origin
+	boundingBoxMin -= meanPos;
+	boundingBoxMax -= meanPos;
+
+	// find coordinate direction where bounding box has greatest extend
+	// used to set view such that everything is visible
+	float boundingBoxLengthX = boundingBoxMax.x - boundingBoxMin.x;
+	float boundingBoxLengthY = boundingBoxMax.y - boundingBoxMin.y;
+	float boundingBoxLengthZ = boundingBoxMax.z - boundingBoxMin.z;
+	float boundingBoxLengthMax = glm::max(boundingBoxLengthX, glm::max(boundingBoxLengthY, boundingBoxLengthZ));
 	float minValue = 0;
 	float maxValue = 0;
-	if(maxDiff==diffX){minValue=minCoordinates.x;maxValue=maxCoordinates.x;}
-	if(maxDiff==diffY){minValue=minCoordinates.y;maxValue=maxCoordinates.y;}
-	if(maxDiff==diffZ){minValue=minCoordinates.z;maxValue=maxCoordinates.z;}
-	float zoomFactor = (1+1)/(maxDiff);	// zoomFactor represents fraction in formula
-
+	if (boundingBoxLengthMax == boundingBoxLengthX) { minValue = boundingBoxMin.x; maxValue = boundingBoxMax.x; }
+	if (boundingBoxLengthMax == boundingBoxLengthY) { minValue = boundingBoxMin.y; maxValue = boundingBoxMax.y; }
+	if (boundingBoxLengthMax == boundingBoxLengthZ) { minValue = boundingBoxMin.z; maxValue = boundingBoxMax.z; }
 
 	// for each track read in all points
 	for (int trackIndex = 0; trackIndex < numTracks; ++trackIndex) {
 
 		int numPointsInTrack = trkFileReader.getPointNumInTrk(trackIndex); // number of points in current track
 		for (int pointIndex = 0; pointIndex < numPointsInTrack; ++pointIndex) {
+
 			std::vector<float> point;
 			trkFileReader.readPoint(trackIndex, pointIndex, point);
 			glm::vec3 pos = glm::vec3(point[0], point[2], point[1]); // swap y and z (we use different coords)
 
-            // move to center of coordinate system
-            pos -= meanPosition;
-			pos = (pos-minValue)*zoomFactor+glm::vec3(-1); // see formula from wikimedia
+			// move data such that mean of all data points is at center of coordinate system
+			pos -= meanPos;
 
-			// dirty hack: we use this to discard fragments connecting end and start vertices of two lines
+			// scale data such that largest direction of bounding box is in [-1,1]
+			// i.e. map [minValue, maxValue] to [-1,1] or boundingBoxLengthMax to 2
+			pos = glm::vec3(-1) + 2.0f * ((pos - glm::vec3(minValue)) / boundingBoxLengthMax);
+
+			// dirty hack: we use this magic value as a flag
+			// to discard fragments in the fragment shader that connect end and start vertices of two separate lines
 			// this allows us to just use one vbo for all the triangle strip vertices which is much faster.
 			if (pointIndex == numPointsInTrack-1)
 				pos.z = 42.4242;
 
-            line1Positions.push_back(pos);
+			linePositions.push_back(pos);
         }
 	}
 
@@ -236,17 +250,17 @@ bool MainWindow::loadTRKData(QString &filename) {
 	ui->spinBoxLineWidthDepthCueingFactor->setValue(0.5f);
 	ui->spinBoxLineHaloMaxDepth->setValue(0.04f);
 
-	if (sumOfAllPoints > 200000) { // big dataset needs other parameters
+	if (numPointsTotal > 200000) { // big dataset needs other parameters
 		ui->spinBoxLineTriangleStripWidth->setValue(0.006f);
 		ui->spinBoxLineWidthPercentageBlack->setValue(0.3f);
 		ui->spinBoxLineWidthDepthCueingFactor->setValue(1.0f);
 		ui->spinBoxLineHaloMaxDepth->setValue(0.04f);
 	}
 
-	generateAdditionalLineVertexData(line1Positions);
+	generateAdditionalLineVertexData(linePositions);
 
 	ui->spinBoxTestDataNumVertices->setValue(datasetLines[0].size());
-	qDebug() << "Loaded .trk data with:" << line1Positions.size() << "line vertices," << datasetLines[0].size() << "vertices after duplication for triangle strip drawing. Each vertex consists of 8 floats (3 pos, 3 direction to next, 2 uv for triangle strip drawing).";
+	qDebug() << "Loaded .trk data with:" << linePositions.size() << "line vertices," << datasetLines[0].size() << "vertices after duplication for triangle strip drawing. Each vertex consists of 8 floats (3 pos, 3 direction to next, 2 uv for triangle strip drawing).";
 
 	return true;
 }

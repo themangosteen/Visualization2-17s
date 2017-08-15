@@ -49,7 +49,7 @@ void main()
 
     float offset = 2*abs(vertUV.y - 0.5); // relative offset of fragment from centerline of strip (perpendicular to line direction)
     float depth = getLinearizedFragmentDepth(); // depth in [0,1]
-    float offsetThreshold = lineWidthPercentageBlack * (1 - depth*lineWidthDepthCueingFactor); // black percentage depends on depth
+    float offsetThreshold = lineWidthPercentageBlack * (1 - depth*lineWidthDepthCueingFactor); // allow for black percentage to depend on depth (distant line thinning)
 
     if (offset < offsetThreshold) {
         outColor = vec4(colorLine,1); // assign black (to represent line)

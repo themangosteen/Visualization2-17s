@@ -142,7 +142,8 @@ void GLWidget::allocateGPUBufferLineData()
 	makeCurrent();
 
 	// load lines
-	// TODO: currently we just use one single line (one single array of vertices)
+	// note: we draw all separates lines of the loaded dataset as a single line (single vertex array in vbo)
+	// this allows for much faster drawing. we discard fragments connecting start and end vertices of separate lines.
 	nrLines = lines->size();
 
 	std::vector<LineVertex> line1 = (*lines)[0];
@@ -230,11 +231,9 @@ void GLWidget::drawLines()
 	QMatrix4x4 projMat = QMatrix4x4(glm::value_ptr(camera.getProjectionMatrix())).transposed();
 	glm::vec3 camPosGLM = camera.getPosition();
 	QVector3D camPos = QVector3D(camPosGLM.x,camPosGLM.y,camPosGLM.z);
-	QVector3D lightPos = QVector3D(0, 0, 100);
 	shaderLinesWithHalos->setUniformValue(shaderLinesWithHalos->uniformLocation("viewMat"), viewMat);
 	shaderLinesWithHalos->setUniformValue(shaderLinesWithHalos->uniformLocation("projMat"), projMat);
 	shaderLinesWithHalos->setUniformValue(shaderLinesWithHalos->uniformLocation("inverseProjMat"), projMat.inverted());
-	shaderLinesWithHalos->setUniformValue(shaderLinesWithHalos->uniformLocation("lightPos"), lightPos); // in view space
 	shaderLinesWithHalos->setUniformValue(shaderLinesWithHalos->uniformLocation("cameraPos"), camPos);
 	shaderLinesWithHalos->setUniformValue(shaderLinesWithHalos->uniformLocation("colorLine"), 0.0f, 0.0f, 0.0f);
 	shaderLinesWithHalos->setUniformValue(shaderLinesWithHalos->uniformLocation("colorHalo"), 1.0f, 1.0f, 1.0f);
@@ -252,7 +251,6 @@ void GLWidget::drawLines()
 	// DRAW
 
 	glf->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
 	glf->glDrawArrays(GL_TRIANGLE_STRIP, 0, (*lines)[0].size());
 
 	shaderLinesWithHalos->release();

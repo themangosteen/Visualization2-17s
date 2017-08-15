@@ -28,7 +28,7 @@ void main()
     // move vertices perpendicular to both line and view direction
     // v = 1 moves half strip width in cross product direction, v = 0 moves half strip width in opposite direction)
     vec3 viewAlignedPerpendicularDirection = normalize(cross(position - cameraPos, direction));
-    vec3 viewAlignedPosition = position +  viewAlignedPerpendicularDirection * (uv.y-0.5)*lineTriangleStripWidth;
+    vec3 viewAlignedPosition = position + viewAlignedPerpendicularDirection * (uv.y-0.5)*lineTriangleStripWidth;
 
     // tell fragment shader to discard fragments beyond a certain distance from origin in clipping plane direction
     discardFragment = 0;
